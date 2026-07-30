@@ -62,6 +62,11 @@ Make a scratch directory once, then substitute `<since>` (Step 2) and
 V="$(mktemp -d)"
 ```
 
+Shell state does not survive between tool calls. Either set `V` again in every
+call below, or pick one fixed scratch path and reuse it — an unset `V` turns
+`"$V/orders.json"` into `/orders.json`, which fails or writes to the wrong
+place without ever mentioning `V`.
+
 ```bash
 cat > "$V/orders.json" <<'JSON'
 {"query":"created_at:>'<since>'","first":50}

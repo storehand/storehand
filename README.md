@@ -39,9 +39,10 @@ one rule that never bends: **StoreHand proposes, you approve.**
 | `daily-store-briefing` | Orders, payment problems, cancellations, stock alerts | Local files only |
 | `store-health-check` | Weekly check: sold-out-but-active products, discount windows, broken storefront links, metadata gaps | Local files only |
 
-Neither skill writes anything to your store. "Local files only" means
-`.storehand/` in your own directory — the profile, and a timestamp so tomorrow's
-briefing knows where to start.
+None of the skills write anything to your store. "Local files only" means
+`.storehand/` in your own directory — the profile, a timestamp so tomorrow's
+briefing knows where to start, and the health check's memory of what it found
+last time.
 
 More on the way: product listing writer, price and competitor watch, SEO
 metadata audit, weekly store report.
