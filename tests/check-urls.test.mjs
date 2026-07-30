@@ -112,3 +112,43 @@ test('absolute URLs op hetzelfde domein en relatieve paden werken allebei', asyn
     assert.equal(report.truncated, false);
   } finally { server.close(); }
 });
+
+test('een misvormde Location-header op één URL laat de rest van de batch niet omvallen', async () => {
+  const { server, base } = await startServer(route({
+    '/kapot': (req, res) => { res.writeHead(302, { location: 'http://[' }); res.end(); },
+    '/gezond': (req, res) => { res.writeHead(200); res.end('fine'); },
+  }));
+  try {
+    const report = await checkUrls({ base, urls: ['/kapot', '/gezond'], timeoutMs: 2000 });
+    const [broken, healthy] = report.checked;
+    assert.match(broken.error, /invalid redirect target/);
+    assert.equal(healthy.status, 200);
+  } finally { server.close(); }
+});
+
+test('checkUrl geeft een foutresultaat terug voor een misvormde Location-header (niet een throw)', async () => {
+  const { server, base } = await startServer(route({
+    '/kapot': (req, res) => { res.writeHead(302, { location: 'http://[' }); res.end(); },
+  }));
+  try {
+    const result = await checkUrl(base, '/kapot', { timeoutMs: 2000 });
+    assert.match(result.error, /invalid redirect target/);
+  } finally { server.close(); }
+});
+
+test('een mailto-URL wordt overgeslagen zonder fetch en zonder de batch te verstoren', async () => {
+  const { server, base } = await startServer(route({
+    '/gezond': (req, res) => { res.writeHead(200); res.end('fine'); },
+  }));
+  try {
+    const report = await checkUrls({
+      base,
+      urls: ['mailto:x@example.com', '/gezond'],
+      timeoutMs: 2000,
+    });
+    const [mail, healthy] = report.checked;
+    assert.equal(mail.skipped, true);
+    assert.equal(mail.error, undefined);
+    assert.equal(healthy.status, 200);
+  } finally { server.close(); }
+});
