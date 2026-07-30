@@ -62,6 +62,11 @@ Make a scratch directory once, then substitute `<since>` (Step 2) and
 V="$(mktemp -d)"
 ```
 
+Shell state does not survive between tool calls. Either set `V` again in every
+call below, or pick one fixed scratch path and reuse it — an unset `V` turns
+`"$V/orders.json"` into `/orders.json`, which fails or writes to the wrong
+place without ever mentioning `V`.
+
 ```bash
 cat > "$V/orders.json" <<'JSON'
 {"query":"created_at:>'<since>'","first":50}
@@ -102,9 +107,11 @@ The quoted heredoc (`<<'JSON'`) stops the shell touching the contents, so the
 filter values arrive exactly as written. Read each command's output before moving
 on; an error here must never become a zero in the report.
 
-The CLI prints progress lines with terminal escape codes before the JSON. They go
-to stderr, so `2>/dev/null` gives you clean JSON — but only do that once a command
-has proven it works, because it also hides the errors you need to see.
+Progress lines with terminal escape codes go to stderr — and so does the
+CLI's error box when a call fails, while stdout stays empty. `2>/dev/null`
+therefore hides errors, not just noise: only silence stderr once a command
+has proven to work. Check the exit code, and treat empty stdout as a failed
+call, never as a quiet result.
 
 ## Step 3b — Re-check what came back
 
@@ -154,11 +161,16 @@ than reporting the count you happened to fetch.
 
 ## Step 5 — Update the marker
 
-**Only after a successful report**, write `.storehand/state.json`:
+**Only after a successful report**, update `.storehand/state.json`: read the
+file first, keep every key you did not write — other skills keep their own
+memory in this same file — replace only `lastBriefingAt`, and write the whole
+object back. If the file could not be parsed, say so and do not write it.
 
 ```json
 { "lastBriefingAt": "<the ISO timestamp of this run>" }
 ```
+
+Every key you did not write goes back exactly as you found it.
 
 If any query failed, leave the file untouched. Moving the marker after a partial
 run means tomorrow silently skips whatever today never saw.
@@ -168,7 +180,7 @@ run means tomorrow silently skips whatever today never saw.
 | Situation | What to do |
 |---|---|
 | `shopify` not found or older than 4.5 | Show the install or `shopify upgrade` step, stop |
-| Not authenticated / token expired | Show the exact `shopify store auth --store … --scopes read_orders,read_products,read_inventory` line, stop |
+| Not authenticated / token expired | Show the exact `shopify store auth --store … --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation` line, stop |
 | One query fails | Report the categories that succeeded and state clearly which one failed, with the literal error |
 | A field does not exist (API version drift) | Show the error, name the query file, say the query needs updating — see `$CLAUDE_PLUGIN_ROOT/shared/api-version.md` |
 | `$CLAUDE_PLUGIN_ROOT` is empty | Stop and say the plugin root could not be resolved. Never guess where the query files are |

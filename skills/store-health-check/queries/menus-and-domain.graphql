@@ -1,0 +1,28 @@
+# Every navigation menu item (all three levels Shopify allows). Read-only.
+# Needs the read_online_store_navigation scope. Does NOT carry the primary
+# domain — that copy lives in collections-health.graphql, which needs no
+# extra scope, so the link check's base survives even when this query dies
+# with ACCESS_DENIED.
+query MenusAndDomain($first: Int!) {
+  menus(first: $first) {
+    nodes {
+      handle
+      title
+      items {
+        title
+        url
+        items {
+          title
+          url
+          items {
+            title
+            url
+          }
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}

@@ -1,7 +1,7 @@
 {
   "name": "storehand",
   "version": "0.1.0",
-  "description": "An extra pair of hands for your store. A Claude Code plugin with open-source skills that turn Claude into your daily Shopify operator. Today: store setup and a daily briefing. On the way: health checks, listing writing, price watching, SEO audits and weekly reports. Read-only by default, no telemetry.",
+  "description": "An extra pair of hands for your store. A Claude Code plugin with open-source skills that turn Claude into your daily Shopify operator. Today: store setup, a daily briefing (orders, payment problems, cancellations, stock alerts) and a weekly health check (sold-out products, broken links, discount and metadata gaps). On the way: listing writing, price watching, SEO audits and weekly reports. Read-only by default, no telemetry.",
   "keywords": [
     "shopify",
     "ai",

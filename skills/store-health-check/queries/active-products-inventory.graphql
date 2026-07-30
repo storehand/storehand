@@ -1,0 +1,44 @@
+# Active products with their inventory and metadata presence. Read-only.
+# Serves two checks: sold-out-but-active (totalInventory <= 0 while status
+# ACTIVE and tracksInventory) and metadata gaps (seo description presence
+# and image alt).
+# $query example: "status:active"
+#
+# The filter narrows, it does not guarantee (verified 2026-07-30 on a live
+# store for a sibling query). Always re-check `status` and `tracksInventory`
+# before reporting. `onlineStoreUrl` is null even for live products when the
+# API client is not an Online Store channel — build URLs from the handle.
+query ActiveProductsInventory($query: String!, $first: Int!) {
+  products(first: $first, query: $query) {
+    nodes {
+      id
+      title
+      handle
+      status
+      tracksInventory
+      totalInventory
+      seo {
+        description
+      }
+      featuredMedia {
+        alt
+      }
+      # Products whose every variant has inventoryPolicy: CONTINUE sell on
+      # backorder by design — that is not the same finding as sold out.
+      # pageInfo exposes truncation: a product with more than 10 variants
+      # can hide a DENY one past the cut, so hasNextPage must gate the
+      # exclusion, not just the returned nodes.
+      variants(first: 10) {
+        nodes {
+          inventoryPolicy
+        }
+        pageInfo {
+          hasNextPage
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}

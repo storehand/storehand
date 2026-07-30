@@ -66,7 +66,7 @@ for the daily briefing, so they can do it later.
 Show the command, explain it, then run it:
 
 ```bash
-shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory
+shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation
 ```
 
 Explain before running:
@@ -74,7 +74,7 @@ Explain before running:
 - This uses **Shopify's own CLI app**. The user does not create an app, does not
   need a Partner account, and there is no app review.
 - A browser opens and shows exactly which permissions are being requested. These
-  three scopes are **read-only** — StoreHand cannot change anything with them.
+  five scopes are **read-only** — StoreHand cannot change anything with them.
 - The token is stored locally by the Shopify CLI in `~/.config/`, and it refreshes
   itself.
 
@@ -82,7 +82,7 @@ Explain before running:
 flow instead:
 
 ```bash
-SHOPIFY_CLI_DEVICE_AUTH=1 shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory
+SHOPIFY_CLI_DEVICE_AUTH=1 shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation
 ```
 
 That prints a code and a URL to open on any other device.

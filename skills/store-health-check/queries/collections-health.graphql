@@ -1,0 +1,31 @@
+# All collections: their handle for the storefront URL check and their
+# description for the metadata check. Read-only.
+# Collection.onlineStoreUrl does not exist on 2026-07 (verified live) —
+# a collection URL that 404s IS the finding, whatever the publication state.
+# A collection only counts as a metadata gap when BOTH the body description
+# and seo.description are empty — a deliberate SEO description should not
+# be flagged just because the body description is blank.
+query CollectionsHealth($first: Int!) {
+  # Rides along here because this query needs no extra scope, so the link
+  # check always has a `base` to work from.
+  shop {
+    primaryDomain {
+      url
+      host
+    }
+  }
+  collections(first: $first) {
+    nodes {
+      id
+      title
+      handle
+      description
+      seo {
+        description
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}
