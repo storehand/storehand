@@ -44,6 +44,41 @@ That command prints nothing and appears to hang. That is what success looks like
 leave it open. Simplest alternative: run `shopify store auth` on your laptop
 instead, where the browser and the CLI are on the same machine.
 
+**There is no device flow for this command.** `shopify store auth` only does the
+browser redirect above. The CLI does know a device-code flow — the environment
+variable `SHOPIFY_CLI_DEVICE_AUTH` is real — but it belongs to the identity login
+used by other commands, and setting it here changes nothing. Do not plan around
+it: verified against CLI 4.5.2, which opened the browser regardless.
+
+**The CLI crashes instead of printing the URL when no browser exists.** On a
+headless machine it dies with `Error: spawn xdg-open ENOENT` before you ever see
+the authorization link. The "Browser did not open automatically" fallback in the
+CLI does not catch this. Put a stand-in on the `PATH` that records the URL rather
+than opening it:
+
+```bash
+mkdir -p /tmp/authshim
+printf '#!/bin/sh\nprintf "%%s\\n" "$1" > /tmp/authshim/url.txt\n' > /tmp/authshim/xdg-open
+chmod +x /tmp/authshim/xdg-open
+PATH=/tmp/authshim:$PATH shopify store auth --store your-store.myshopify.com --scopes …
+```
+
+The command keeps running and waits; `/tmp/authshim/url.txt` holds the URL.
+
+**Finishing without any tunnel.** If you cannot forward the port, open that URL in
+your own browser and approve. The browser then tries to reach
+`127.0.0.1:13387` on *your* machine and fails to connect — expected, and not an
+error. Copy the whole address from the address bar and deliver it to the waiting
+process yourself:
+
+```bash
+curl "http://127.0.0.1:13387/auth/callback?code=…&shop=…&state=…"
+```
+
+The `state` value must be the one from the URL you opened; it is tied to that one
+waiting process. Authorization codes are single-use and short-lived, so if the
+process has already exited, start over and use the fresh link.
+
 ## 2. A custom app token — not used
 
 You can create a custom app in your admin and get a token that never expires,
