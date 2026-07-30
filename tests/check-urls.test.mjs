@@ -152,3 +152,15 @@ test('een mailto-URL wordt overgeslagen zonder fetch en zonder de batch te verst
     assert.equal(healthy.status, 200);
   } finally { server.close(); }
 });
+
+test('een negatieve concurrency valt terug op minstens één worker', async () => {
+  const { server, base } = await startServer(route({
+    '/1': (req, res) => { res.writeHead(200); res.end(); },
+    '/2': (req, res) => { res.writeHead(200); res.end(); },
+  }));
+  try {
+    const report = await checkUrls({ base, urls: ['/1', '/2'], concurrency: -1, timeoutMs: 2000 });
+    assert.equal(report.checked[0].status, 200);
+    assert.equal(report.checked[1].status, 200);
+  } finally { server.close(); }
+});

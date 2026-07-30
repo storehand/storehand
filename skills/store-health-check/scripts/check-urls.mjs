@@ -93,7 +93,7 @@ export async function checkUrls({
 }) {
   const list = urls.slice(0, maxUrls);
   const results = new Array(list.length);
-  const clampedConcurrency = Math.min(concurrency, MAX_CONCURRENCY);
+  const clampedConcurrency = Math.max(1, Math.min(concurrency, MAX_CONCURRENCY));
   let next = 0;
   // Eén teller over meerdere workers is hier veilig: Node is single-threaded
   // en tussen lezen en ophogen van `next` zit geen await.
