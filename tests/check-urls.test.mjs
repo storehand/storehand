@@ -2,7 +2,19 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import http from 'node:http';
+import fs from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { execFile } from 'node:child_process';
+import { promisify } from 'node:util';
+import { fileURLToPath } from 'node:url';
+
+const execFileAsync = promisify(execFile);
 import { checkUrl, checkUrls } from '../skills/store-health-check/scripts/check-urls.mjs';
+
+const SCRIPT_PATH = fileURLToPath(
+  new URL('../skills/store-health-check/scripts/check-urls.mjs', import.meta.url),
+);
 
 function startServer(handler) {
   return new Promise((resolve) => {
@@ -163,4 +175,28 @@ test('een negatieve concurrency valt terug op minstens één worker', async () =
     assert.equal(report.checked[0].status, 200);
     assert.equal(report.checked[1].status, 200);
   } finally { server.close(); }
+});
+
+test('the cli entry point still runs when its own path contains a space', async () => {
+  const { server, base } = await startServer(route({
+    '/ok': (req, res) => { res.writeHead(200); res.end('fine'); },
+  }));
+  const tmpDir = fs.mkdtempSync(path.join(os.tmpdir(), 'store hand-'));
+  try {
+    const copiedScript = path.join(tmpDir, 'check-urls.mjs');
+    fs.copyFileSync(SCRIPT_PATH, copiedScript);
+    const inputFile = path.join(tmpDir, 'input.json');
+    fs.writeFileSync(inputFile, JSON.stringify({ base, urls: ['/ok'] }));
+
+    // execFile (async), not execFileSync: the mock server above lives in this
+    // same process, so a *synchronous* child_process call would block this
+    // process's event loop and the server could never answer the child's
+    // request — a self-deadlock, not a bug in the script under test.
+    const { stdout } = await execFileAsync(process.execPath, [copiedScript, inputFile]);
+    const report = JSON.parse(stdout);
+    assert.equal(report.checked[0].status, 200);
+  } finally {
+    server.close();
+    fs.rmSync(tmpDir, { recursive: true, force: true });
+  }
 });
