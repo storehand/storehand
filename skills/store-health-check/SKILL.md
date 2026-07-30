@@ -77,9 +77,10 @@ shopify store execute --store <store> --json \
 
 Read each command's output before moving on.
 
-The CLI prints progress lines with terminal escape codes before the JSON. They
-go to stderr, so `2>/dev/null` gives you clean JSON — but only do that once a
-command has proven it works, because it also hides the errors you need to see.
+Progress lines with terminal escape codes go to stderr; `2>/dev/null` clears
+them. Errors do **not** — the CLI prints its error box on stdout, in place of
+the JSON. Empty stderr is not success; parse stdout and check it is really
+JSON.
 
 The last two need scopes a store
 connected before health checks existed will not have (`read_discounts`,
@@ -99,7 +100,9 @@ Re-check everything; filters narrow, they do not guarantee.
   every returned variant has `inventoryPolicy: CONTINUE` — they sell on
   backorder by design, not a stockout. When some but not all variants
   continue selling, keep the finding but phrase it as a question in the
-  report ("intentional backorder, or should it be hidden?").
+  report ("intentional backorder, or should it be hidden?"). If a product
+  has more variants than the query returns, keep the finding rather than
+  excluding it — a hidden `DENY` variant may be the stockout.
   Finding id: `oos:<handle>`.
 - **Discounts** (skip entirely if not measured) — compare against the clock,
   not against `status` alone:
@@ -213,10 +216,13 @@ Fixed shape:
 **Only after a successful report** — every check either measured or explicitly
 reported "not measured" — write `.storehand/state.json`: take the object from
 Step 1, replace only the `healthCheck` key with
-`{ "lastRunAt": "<now, ISO 8601 UTC>", "findings": [ … ] }` (all current ids
-with their `firstSeenAt`), and write the whole object back. If any measured
-check failed outright, leave the file untouched — a moved marker after a
-partial run hides whatever the failed part never saw.
+`{ "lastRunAt": "<now, ISO 8601 UTC>", "findings": [ … ] }` — all ids you
+reported this run **plus every id carried forward under Step 5** (a finding
+you could not look at keeps its place and its `firstSeenAt`) — and write the
+whole object back. If any measured check failed outright, leave the file
+untouched — a moved marker after a partial run hides whatever the failed part
+never saw. And as in Step 1: if `state.json` was unparseable, do not write at
+all.
 
 ## Errors — never report a number you did not measure
 

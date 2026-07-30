@@ -102,9 +102,10 @@ The quoted heredoc (`<<'JSON'`) stops the shell touching the contents, so the
 filter values arrive exactly as written. Read each command's output before moving
 on; an error here must never become a zero in the report.
 
-The CLI prints progress lines with terminal escape codes before the JSON. They go
-to stderr, so `2>/dev/null` gives you clean JSON — but only do that once a command
-has proven it works, because it also hides the errors you need to see.
+Progress lines with terminal escape codes go to stderr; `2>/dev/null` clears
+them. Errors do **not** — the CLI prints its error box on stdout, in place of
+the JSON. Empty stderr is not success; parse stdout and check it is really
+JSON.
 
 ## Step 3b — Re-check what came back
 
@@ -157,11 +158,13 @@ than reporting the count you happened to fetch.
 **Only after a successful report**, update `.storehand/state.json`: read the
 file first, keep every key you did not write — other skills keep their own
 memory in this same file — replace only `lastBriefingAt`, and write the whole
-object back:
+object back. If the file could not be parsed, say so and do not write it.
 
 ```json
-{ "lastBriefingAt": "<the ISO timestamp of this run>", "…other keys…": "…" }
+{ "lastBriefingAt": "<the ISO timestamp of this run>" }
 ```
+
+Every key you did not write goes back exactly as you found it.
 
 If any query failed, leave the file untouched. Moving the marker after a partial
 run means tomorrow silently skips whatever today never saw.

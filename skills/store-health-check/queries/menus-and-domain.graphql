@@ -1,14 +1,9 @@
-# The storefront's primary domain plus every navigation menu item (all three
-# levels Shopify allows).
-# Read-only. Needs the read_online_store_navigation scope for `menus`;
-# shop.primaryDomain only needs what any StoreHand token already has.
+# Every navigation menu item (all three levels Shopify allows). Read-only.
+# Needs the read_online_store_navigation scope. Does NOT carry the primary
+# domain — that copy lives in collections-health.graphql, which needs no
+# extra scope, so the link check's base survives even when this query dies
+# with ACCESS_DENIED.
 query MenusAndDomain($first: Int!) {
-  shop {
-    primaryDomain {
-      url
-      host
-    }
-  }
   menus(first: $first) {
     nodes {
       handle
