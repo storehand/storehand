@@ -5,7 +5,7 @@ By contributing to StoreHand you agree to the following.
 1. **You wrote it, or you have the right to submit it.** Your contribution is
    your original work, or you have permission from the rights holder to submit
    it under this agreement.
-2. **Licence to the project.** You grant Steffano van Hoven and the StoreHand
+2. **Licence to the project.** You grant Steffano van Hoven (DevSef) and the StoreHand
    project a perpetual, worldwide, non-exclusive, royalty-free, irrevocable
    licence to use, reproduce, modify, distribute and sublicense your
    contribution, including as part of commercial offerings such as a hosted
