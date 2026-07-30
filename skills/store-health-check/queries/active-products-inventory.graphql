@@ -25,9 +25,15 @@ query ActiveProductsInventory($query: String!, $first: Int!) {
       }
       # Products whose every variant has inventoryPolicy: CONTINUE sell on
       # backorder by design — that is not the same finding as sold out.
+      # pageInfo exposes truncation: a product with more than 10 variants
+      # can hide a DENY one past the cut, so hasNextPage must gate the
+      # exclusion, not just the returned nodes.
       variants(first: 10) {
         nodes {
           inventoryPolicy
+        }
+        pageInfo {
+          hasNextPage
         }
       }
     }

@@ -101,8 +101,8 @@ Re-check everything; filters narrow, they do not guarantee.
   every returned variant has `inventoryPolicy: CONTINUE` — they sell on
   backorder by design, not a stockout. When some but not all variants
   continue selling, keep the finding but phrase it as a question in the
-  report ("intentional backorder, or should it be hidden?"). If a product
-  has more variants than the query returns, keep the finding rather than
+  report ("intentional backorder, or should it be hidden?"). When
+  `variants.pageInfo.hasNextPage` is true, keep the finding rather than
   excluding it — a hidden `DENY` variant may be the stockout.
   Finding id: `oos:<handle>`.
 - **Discounts** (skip entirely if not measured) — compare against the clock,
@@ -151,7 +151,7 @@ Write the input file yourself from the query output (no extra tooling needed):
 
 ```bash
 cat > "$V/urls.json" <<'JSON'
-{ "base": "<primaryDomain.url from Step 2>",
+{ "base": "<shop.primaryDomain.url from the collections query, Step 2>",
   "urls": ["/collections/…", "/products/…", "/pages/contact"] }
 JSON
 node "$CLAUDE_PLUGIN_ROOT/skills/store-health-check/scripts/check-urls.mjs" "$V/urls.json"
