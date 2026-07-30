@@ -1,8 +1,8 @@
 # 2026-07-30 — First real run of `store-health-check`
 
 Store: the same live Shopify store as the briefing dogfood — 42 active products,
-356 variants, 7 collections, zero orders, storefront live on
-`https://www.bynaila.nl`. Admin API version `2026-07`, Shopify CLI 4.5.2.
+356 variants, 7 collections, zero orders, storefront live on its own custom
+domain. Admin API version `2026-07`, Shopify CLI 4.5.2.
 
 Run through the real code path this time from the first minute: `shopify store
 execute` with `--query-file` and `--variable-file`, and the skill's own

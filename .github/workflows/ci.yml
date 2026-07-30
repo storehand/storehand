@@ -13,6 +13,10 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
+      # First: nothing else matters if the change leaks something. Findings are
+      # masked because this log is public on a public repository.
+      - name: Scan for sensitive data
+        run: node scripts/scan-secrets.mjs .
       - name: Run tests
         run: node --test
       - name: Validate plugin structure

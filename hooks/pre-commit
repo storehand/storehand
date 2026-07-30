@@ -1,0 +1,34 @@
+#!/bin/sh
+# Blocks a commit that would put sensitive data in the repository.
+#
+# Enable once per clone:
+#     git config core.hooksPath hooks
+#
+# CI runs the same scan, so a missing hook cannot let a leak reach main — the
+# hook exists to catch it before it is written into history at all, which is the
+# only point where removing it is still free.
+#
+# Values are revealed here: this output stays on your machine.
+
+set -e
+
+if ! command -v node >/dev/null 2>&1; then
+  echo "pre-commit: node not found, cannot scan for secrets — commit blocked." >&2
+  exit 1
+fi
+
+root=$(git rev-parse --show-toplevel)
+
+if ! node "$root/scripts/scan-secrets.mjs" "$root" --reveal; then
+  cat >&2 <<'EOF'
+
+Commit blocked: sensitive data found.
+
+Fix the finding, or — if it is a deliberate example — end that line with:
+    storehand-allow-secret: <rule-id>
+
+Never commit a real store handle, shop id, customer domain or token. Use the
+placeholders: your-store.myshopify.com, store.example, <shop-id>.
+EOF
+  exit 1
+fi
