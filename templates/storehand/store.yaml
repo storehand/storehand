@@ -1,0 +1,20 @@
+# StoreHand store profile — hard numbers.
+# Docs: https://github.com/storehand/storehand/blob/main/shared/store-profile.md
+
+# The myshopify.com domain of your store (not your custom domain).
+store: your-store.myshopify.com
+
+# Decides where "today" starts in your reports.
+timezone: Europe/Amsterdam
+currency: EUR
+
+inventory:
+  # A variant at or below this quantity shows up as an alert.
+  low_stock_threshold: 5
+
+pricing:
+  # StoreHand never proposes a price that drops margin below this.
+  min_margin_percent: 20
+
+# Product pages you want the price watch skill to follow. May stay empty.
+competitors: []
