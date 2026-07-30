@@ -40,6 +40,11 @@ Written by skills, never by hand, and git-ignored. Current keys:
 | Key | Written by | Meaning |
 |---|---|---|
 | `lastBriefingAt` | `daily-store-briefing` | ISO timestamp of the last successful briefing |
+| `healthCheck` | `store-health-check` | `lastRunAt` (ISO timestamp of the last successful check) and `findings` (list of `{ id, firstSeenAt }`) so the next run can say "new" and "open since" |
+
+Skills share this file: read the whole object, replace only your own key, and
+write the whole object back — a skill that rewrites the file from scratch
+erases another skill's memory.
 
 A skill updates `state.json` **only after it has delivered a successful report**.
 A failed run must not move the marker forward, or the next run silently skips
