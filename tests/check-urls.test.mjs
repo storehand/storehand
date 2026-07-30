@@ -33,7 +33,7 @@ function route(routes) {
   };
 }
 
-test('een gewone 200 komt terug als status 200 zonder vlaggen', async () => {
+test('a plain 200 comes back as status 200 with no flags', async () => {
   const { server, base } = await startServer(route({
     '/ok': (req, res) => { res.writeHead(200); res.end('fine'); },
   }));
@@ -46,37 +46,37 @@ test('een gewone 200 komt terug als status 200 zonder vlaggen', async () => {
   } finally { server.close(); }
 });
 
-test('een onbestaand pad komt terug als 404', async () => {
+test("a path that doesn't exist comes back as 404", async () => {
   const { server, base } = await startServer(route({}));
   try {
-    const result = await checkUrl(base, '/weg', { timeoutMs: 2000 });
+    const result = await checkUrl(base, '/missing', { timeoutMs: 2000 });
     assert.equal(result.status, 404);
   } finally { server.close(); }
 });
 
-test('redirect naar /password wordt gevlagd en niet verder gevolgd', async () => {
+test('a redirect to /password is flagged and not followed further', async () => {
   const { server, base } = await startServer(route({
-    '/dicht': (req, res) => { res.writeHead(302, { location: '/password' }); res.end(); },
+    '/closed': (req, res) => { res.writeHead(302, { location: '/password' }); res.end(); },
   }));
   try {
-    const result = await checkUrl(base, '/dicht', { timeoutMs: 2000 });
+    const result = await checkUrl(base, '/closed', { timeoutMs: 2000 });
     assert.equal(result.passwordPage, true);
     assert.match(result.finalUrl, /\/password$/);
   } finally { server.close(); }
 });
 
-test('redirect naar een ander domein wordt gevlagd en niet opgehaald', async () => {
+test('a redirect to another domain is flagged and not fetched', async () => {
   const { server, base } = await startServer(route({
-    '/ext': (req, res) => { res.writeHead(301, { location: 'https://elders.example/x' }); res.end(); },
+    '/ext': (req, res) => { res.writeHead(301, { location: 'https://elsewhere.example/x' }); res.end(); },
   }));
   try {
     const result = await checkUrl(base, '/ext', { timeoutMs: 2000 });
     assert.equal(result.offDomain, true);
-    assert.equal(result.finalUrl, 'https://elders.example/x');
+    assert.equal(result.finalUrl, 'https://elsewhere.example/x');
   } finally { server.close(); }
 });
 
-test('een redirectketen binnen het domein wordt gevolgd tot de eindstatus', async () => {
+test('a redirect chain within the domain is followed to the final status', async () => {
   const { server, base } = await startServer(route({
     '/a': (req, res) => { res.writeHead(302, { location: '/b' }); res.end(); },
     '/b': (req, res) => { res.writeHead(200); res.end('landed'); },
@@ -89,18 +89,18 @@ test('een redirectketen binnen het domein wordt gevolgd tot de eindstatus', asyn
   } finally { server.close(); }
 });
 
-test('een hangend antwoord wordt een timeout-fout, geen crash', async () => {
+test('a hanging response becomes a timeout error, not a crash', async () => {
   const { server, base } = await startServer(route({
-    '/traag': () => { /* nooit antwoorden */ },
+    '/slow': () => { /* never respond */ },
   }));
   try {
-    const result = await checkUrl(base, '/traag', { timeoutMs: 150 });
+    const result = await checkUrl(base, '/slow', { timeoutMs: 150 });
     assert.equal(result.error, 'timeout');
     assert.equal(result.status, undefined);
   } finally { server.close(); }
 });
 
-test('checkUrls respecteert de cap en meldt afkapping', async () => {
+test('checkUrls respects the cap and reports truncation', async () => {
   const { server, base } = await startServer(route({
     '/1': (req, res) => { res.writeHead(200); res.end(); },
     '/2': (req, res) => { res.writeHead(200); res.end(); },
@@ -113,7 +113,7 @@ test('checkUrls respecteert de cap en meldt afkapping', async () => {
   } finally { server.close(); }
 });
 
-test('absolute URLs op hetzelfde domein en relatieve paden werken allebei', async () => {
+test('absolute URLs on the same domain and relative paths both work', async () => {
   const { server, base } = await startServer(route({
     '/abs': (req, res) => { res.writeHead(200); res.end(); },
   }));
@@ -125,37 +125,37 @@ test('absolute URLs op hetzelfde domein en relatieve paden werken allebei', asyn
   } finally { server.close(); }
 });
 
-test('een misvormde Location-header op één URL laat de rest van de batch niet omvallen', async () => {
+test("a malformed Location header on one URL doesn't take down the rest of the batch", async () => {
   const { server, base } = await startServer(route({
-    '/kapot': (req, res) => { res.writeHead(302, { location: 'http://[' }); res.end(); },
-    '/gezond': (req, res) => { res.writeHead(200); res.end('fine'); },
+    '/broken': (req, res) => { res.writeHead(302, { location: 'http://[' }); res.end(); },
+    '/healthy': (req, res) => { res.writeHead(200); res.end('fine'); },
   }));
   try {
-    const report = await checkUrls({ base, urls: ['/kapot', '/gezond'], timeoutMs: 2000 });
+    const report = await checkUrls({ base, urls: ['/broken', '/healthy'], timeoutMs: 2000 });
     const [broken, healthy] = report.checked;
     assert.match(broken.error, /invalid redirect target/);
     assert.equal(healthy.status, 200);
   } finally { server.close(); }
 });
 
-test('checkUrl geeft een foutresultaat terug voor een misvormde Location-header (niet een throw)', async () => {
+test('checkUrl returns an error result for a malformed Location header (not a throw)', async () => {
   const { server, base } = await startServer(route({
-    '/kapot': (req, res) => { res.writeHead(302, { location: 'http://[' }); res.end(); },
+    '/broken': (req, res) => { res.writeHead(302, { location: 'http://[' }); res.end(); },
   }));
   try {
-    const result = await checkUrl(base, '/kapot', { timeoutMs: 2000 });
+    const result = await checkUrl(base, '/broken', { timeoutMs: 2000 });
     assert.match(result.error, /invalid redirect target/);
   } finally { server.close(); }
 });
 
-test('een mailto-URL wordt overgeslagen zonder fetch en zonder de batch te verstoren', async () => {
+test('a mailto URL is skipped without fetching and without disrupting the batch', async () => {
   const { server, base } = await startServer(route({
-    '/gezond': (req, res) => { res.writeHead(200); res.end('fine'); },
+    '/healthy': (req, res) => { res.writeHead(200); res.end('fine'); },
   }));
   try {
     const report = await checkUrls({
       base,
-      urls: ['mailto:x@example.com', '/gezond'],
+      urls: ['mailto:x@example.com', '/healthy'],
       timeoutMs: 2000,
     });
     const [mail, healthy] = report.checked;
@@ -165,7 +165,7 @@ test('een mailto-URL wordt overgeslagen zonder fetch en zonder de batch te verst
   } finally { server.close(); }
 });
 
-test('een negatieve concurrency valt terug op minstens één worker', async () => {
+test('a negative concurrency falls back to at least one worker', async () => {
   const { server, base } = await startServer(route({
     '/1': (req, res) => { res.writeHead(200); res.end(); },
     '/2': (req, res) => { res.writeHead(200); res.end(); },
