@@ -135,6 +135,36 @@ const RULES = [
     pattern: /\b[A-Z]{2}\d{2}[A-Z0-9]{10,26}\b/g,
   },
   {
+    id: 'network-address',
+    description: 'IP address — someone\'s machine, VPN node or private network',
+    pattern: /\b(?:\d{1,3}\.){3}\d{1,3}\b/g,
+    allow: (match) => {
+      const ip = match[0];
+      const octets = ip.split('.').map(Number);
+      if (octets.some((o) => o > 255)) return true; /* a version number, not an address */
+      /* Loopback is documentation, not disclosure: the Shopify CLI's callback
+       * is 127.0.0.1 for every user on earth. Everything else — a LAN address,
+       * a VPN node, a public host — names a real machine. */
+      return octets[0] === 127 || ip === '0.0.0.0';
+    },
+  },
+  {
+    id: 'ssh-target',
+    description: 'SSH target naming a real host or user',
+    /* Anything user@host on a line that runs ssh. Deliberately not
+     * `ssh <flags> user@host`: real invocations carry flags with arguments
+     * (`-L 13387:127.0.0.1:13387`) and a tighter pattern silently matches
+     * nothing at all on exactly the lines that matter. */
+    pattern: /\bssh\b[^\n]*?\b([A-Za-z0-9._-]+)@([A-Za-z0-9._-]+)/g,
+    allow: (match) => {
+      const user = match[1].toLowerCase();
+      const host = match[2].toLowerCase();
+      const placeholders = new Set(['user', 'youruser', 'your-user', 'me', 'username']);
+      const hostPlaceholders = new Set(['your-server', 'host', 'your-host', 'server', 'example.com']);
+      return placeholders.has(user) && hostPlaceholders.has(host);
+    },
+  },
+  {
     id: 'unknown-host',
     description: 'Hostname that is not on the allowlist — a real store or customer domain?',
     pattern: new RegExp(String.raw`\b(?:[a-z0-9](?:[a-z0-9-]*[a-z0-9])?\.)+${TLD}\b`, 'gi'),

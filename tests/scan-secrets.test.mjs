@@ -70,6 +70,29 @@ test('catches a customer domain that is not on the allowlist', () => {
   assert.ok(findings.includes('unknown-host'));
 });
 
+test('catches an IP address but allows loopback', () => {
+  /* Loopback is documentation: the Shopify CLI's callback is 127.0.0.1 for
+   * every user. A VPN node or a LAN address names somebody's machine. */
+  assert.ok(rulesFound('node reachable at 100.101.102.103').includes('network-address')); // storehand-allow-secret: network-address
+  assert.ok(rulesFound('router at 192.168.1.50').includes('network-address')); // storehand-allow-secret: network-address
+  assert.deepEqual(scanText('callback on 127.0.0.1:13387'), []);
+  assert.deepEqual(scanText('Shopify CLI 4.5.2'), []);
+});
+
+test('catches a VPN hostname', () => {
+  assert.ok(rulesFound('laptop.tailnet-1234.ts.net').includes('unknown-host')); // storehand-allow-secret: unknown-host
+});
+
+test('catches a real ssh target, including behind flags with arguments', () => {
+  /* The tight form `ssh <flags> user@host` matches nothing on a real
+   * invocation, because -L carries an argument. That silent miss is the bug
+   * this test exists to prevent. */
+  const real = 'ssh -N -L 13387:127.0.0.1:13387 someone@their-own-server'; // storehand-allow-secret: ssh-target
+  assert.ok(rulesFound(real).includes('ssh-target'));
+  assert.deepEqual(scanText('ssh -N -L 13387:127.0.0.1:13387 user@your-server'), []);
+  assert.deepEqual(scanText('ssh -N -L 13387:127.0.0.1:13387 user@host'), []);
+});
+
 test('allows the hosts the repository legitimately links to', () => {
   const text = [
     'https://www.apache.org/licenses/LICENSE-2.0',
