@@ -102,10 +102,11 @@ The quoted heredoc (`<<'JSON'`) stops the shell touching the contents, so the
 filter values arrive exactly as written. Read each command's output before moving
 on; an error here must never become a zero in the report.
 
-Progress lines with terminal escape codes go to stderr; `2>/dev/null` clears
-them. Errors do **not** — the CLI prints its error box on stdout, in place of
-the JSON. Empty stderr is not success; parse stdout and check it is really
-JSON.
+Progress lines with terminal escape codes go to stderr — and so does the
+CLI's error box when a call fails, while stdout stays empty. `2>/dev/null`
+therefore hides errors, not just noise: only silence stderr once a command
+has proven to work. Check the exit code, and treat empty stdout as a failed
+call, never as a quiet result.
 
 ## Step 3b — Re-check what came back
 

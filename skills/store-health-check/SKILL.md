@@ -77,10 +77,11 @@ shopify store execute --store <store> --json \
 
 Read each command's output before moving on.
 
-Progress lines with terminal escape codes go to stderr; `2>/dev/null` clears
-them. Errors do **not** — the CLI prints its error box on stdout, in place of
-the JSON. Empty stderr is not success; parse stdout and check it is really
-JSON.
+Progress lines with terminal escape codes go to stderr — and so does the
+CLI's error box when a call fails, while stdout stays empty. `2>/dev/null`
+therefore hides errors, not just noise: only silence stderr once a command
+has proven to work. Check the exit code, and treat empty stdout as a failed
+call, never as a quiet result.
 
 The last two need scopes a store
 connected before health checks existed will not have (`read_discounts`,
