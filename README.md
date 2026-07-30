@@ -37,13 +37,14 @@ one rule that never bends: **StoreHand proposes, you approve.**
 |---|---|---|
 | `storehand-setup` | Creates your store profile and connects the store | Local files only |
 | `daily-store-briefing` | Orders, payment problems, cancellations, stock alerts | Local files only |
+| `store-health-check` | Weekly check: sold-out-but-active products, discount windows, broken storefront links, metadata gaps | Local files only |
 
 Neither skill writes anything to your store. "Local files only" means
 `.storehand/` in your own directory — the profile, and a timestamp so tomorrow's
 briefing knows where to start.
 
-More on the way: store health check, product listing writer, price and
-competitor watch, SEO metadata audit, weekly store report.
+More on the way: product listing writer, price and competitor watch, SEO
+metadata audit, weekly store report.
 
 ## Quickstart
 
@@ -72,13 +73,15 @@ Or ask *"how did the store do overnight?"* — the skill picks itself up.
 
 ## What StoreHand may see
 
-Setup requests three **read-only** scopes and nothing else:
+Setup requests five **read-only** scopes and nothing else:
 
 | Scope | Why |
 |---|---|
 | `read_orders` | New orders, payment status, cancellations, refunds |
 | `read_products` | Product and variant details |
 | `read_inventory` | Stock levels for low-stock alerts |
+| `read_discounts` | Discount codes and windows for the health check |
+| `read_online_store_navigation` | Menu links for the broken-link check |
 
 You approve these in your own browser, on Shopify's own screen. Skills that
 propose changes ask for write access separately, and never write without showing

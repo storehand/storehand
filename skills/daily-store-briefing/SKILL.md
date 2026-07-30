@@ -175,7 +175,7 @@ run means tomorrow silently skips whatever today never saw.
 | Situation | What to do |
 |---|---|
 | `shopify` not found or older than 4.5 | Show the install or `shopify upgrade` step, stop |
-| Not authenticated / token expired | Show the exact `shopify store auth --store … --scopes read_orders,read_products,read_inventory` line, stop |
+| Not authenticated / token expired | Show the exact `shopify store auth --store … --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation` line, stop |
 | One query fails | Report the categories that succeeded and state clearly which one failed, with the literal error |
 | A field does not exist (API version drift) | Show the error, name the query file, say the query needs updating — see `$CLAUDE_PLUGIN_ROOT/shared/api-version.md` |
 | `$CLAUDE_PLUGIN_ROOT` is empty | Stop and say the plugin root could not be resolved. Never guess where the query files are |

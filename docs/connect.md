@@ -6,7 +6,7 @@ the first one.
 ## 1. Shopify CLI auth — what StoreHand uses
 
 ```bash
-shopify store auth --store your-store.myshopify.com --scopes read_orders,read_products,read_inventory
+shopify store auth --store your-store.myshopify.com --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation
 ```
 
 The Shopify CLI has its own Shopify-managed app. **You do not create an app.**
@@ -14,7 +14,7 @@ No Partner account, no app review, no access token to keep safe. A browser opens
 and shows exactly which permissions are requested; the CLI stores a token in
 `~/.config/` and refreshes it for you.
 
-The three scopes above are read-only. StoreHand cannot change anything in your
+The five scopes above are read-only. StoreHand cannot change anything in your
 store with them. Skills that propose changes ask for write scopes separately,
 and the Shopify CLI refuses mutations unless `--allow-mutations` is passed
 explicitly — which StoreHand only does after you approve a specific change.

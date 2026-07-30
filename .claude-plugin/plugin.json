@@ -1,6 +1,6 @@
 {
   "name": "storehand",
-  "description": "Open-source skills that turn Claude into your daily Shopify operator. Today: store setup and a daily briefing (orders, payment problems, cancellations, stock alerts). On the way: health checks, listing writing, price watching, SEO audits and weekly reports. Runs through the official Shopify CLI. Read-only by default. Sends no telemetry.",
+  "description": "Open-source skills that turn Claude into your daily Shopify operator. Today: store setup, a daily briefing (orders, payment problems, cancellations, stock alerts) and a weekly health check (sold-out products, broken links, discount and metadata gaps). On the way: listing writing, price watching, SEO audits and weekly reports. Runs through the official Shopify CLI. Read-only by default. Sends no telemetry.",
   "version": "0.1.0",
   "author": { "name": "Steffano van Hoven (DevSef)" },
   "license": "Apache-2.0",
