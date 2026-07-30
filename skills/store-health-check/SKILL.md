@@ -25,8 +25,16 @@ user at the `storehand-setup` skill and stop.
 Read `.storehand/state.json` and keep the **whole** object in hand — other
 skills store their keys in this file and they must survive your write in
 Step 6. Under `healthCheck` you may find `lastRunAt` and `findings`
-(a list of `{ "id", "firstSeenAt" }`). No `healthCheck` key? This is the first
-health check: say so in the report and skip the "new"/"open since" labels.
+(a list of `{ "id", "firstSeenAt" }`).
+
+- **File absent** → this is the first health check: say so in the report and
+  skip the "new"/"open since" labels.
+- **File present but unparseable** → say so explicitly in the report, run the
+  checks anyway, but do **not** write `state.json` at the end — overwriting a
+  file you could not parse would destroy another skill's marker along with
+  your own.
+- **File present but no `healthCheck` key** → first health check for this
+  skill: say so and skip the "new"/"open since" labels.
 
 ## Step 2 — Run the queries
 
@@ -67,7 +75,13 @@ shopify store execute --store <store> --json \
   --variable-file "$V/menus.json"
 ```
 
-Read each command's output before moving on. The last two need scopes a store
+Read each command's output before moving on.
+
+The CLI prints progress lines with terminal escape codes before the JSON. They
+go to stderr, so `2>/dev/null` gives you clean JSON — but only do that once a
+command has proven it works, because it also hides the errors you need to see.
+
+The last two need scopes a store
 connected before health checks existed will not have (`read_discounts`,
 `read_online_store_navigation`). An ACCESS_DENIED there does **not** kill the
 run: mark that check "not measured", keep going, and put the exact re-auth
@@ -81,7 +95,11 @@ real numbers are higher. Do not paginate.
 Re-check everything; filters narrow, they do not guarantee.
 
 - **Sold out but active** — products where `status` is `ACTIVE`,
-  `tracksInventory` is true and `totalInventory <= 0`.
+  `tracksInventory` is true and `totalInventory <= 0`. Exclude products where
+  every returned variant has `inventoryPolicy: CONTINUE` — they sell on
+  backorder by design, not a stockout. When some but not all variants
+  continue selling, keep the finding but phrase it as a question in the
+  report ("intentional backorder, or should it be hidden?").
   Finding id: `oos:<handle>`.
 - **Discounts** (skip entirely if not measured) — compare against the clock,
   not against `status` alone:
@@ -92,38 +110,58 @@ Re-check everything; filters narrow, they do not guarantee.
 
   On a store with more discounts than the query fetches, the just-expired
   finding is a lower bound — an old untouched discount can fall outside the
-  window; say so when `hasNextPage` was true.
+  window; say so when `hasNextPage` was true. A discount naturally moves
+  `ends-soon` → `just-expired` between runs; when the old id disappears
+  exactly as the new one appears, say "expired as announced" rather than
+  calling it new.
 - **Metadata gaps** — counts plus at most three example handles each:
   products with `seo.description` null or empty
-  (`meta:products-no-seo-description`), products whose `featuredMedia.alt` is
-  null or empty (`meta:images-no-alt`), collections where **both** the body
+  (`meta:products-no-seo-description`), collections where **both** the body
   `description` and `seo.description` are empty
-  (`meta:collections-no-description`). Presence only — judging and fixing the
-  texts is the SEO audit skill's job, say so in the report.
+  (`meta:collections-no-description`). For images: products with
+  `featuredMedia` null are a separate count and a worse problem — no image at
+  all (`meta:images-missing`); only products with a non-null `featuredMedia`
+  whose `alt` is empty or null count toward `meta:images-no-alt`. Presence
+  only — judging and fixing the texts is the SEO audit skill's job, say so in
+  the report.
 
 ## Step 4 — Check the storefront links
 
-Build one URL list from what the store says exists:
+Build one URL list from what the store says exists, in this order — menu
+items first, then collections, then products:
 
-- `/collections/<handle>` for every collection from Step 2;
-- `/products/<handle>` for every **ACTIVE** product;
 - every menu item `url` (all levels, when menus were measured), **skipping**
   items whose URL is empty or points at another domain — count those external
-  links and mention the count, do not fetch them.
+  links and mention the count, do not fetch them. Menu-item URLs arrive
+  absolute (`https://store.example/pages/x`); normalise each to its path
+  before it goes in the list;
+- `/collections/<handle>` for every collection from Step 2;
+- `/products/<handle>` for every **ACTIVE** product.
+
+The script checks at most 200 URLs (its own cap). Put the menu links first so
+they are never the ones dropped — they are the only hand-typed URLs and the
+likeliest to be broken. When the cap is hit the script says `truncated: true`;
+name the cap in the report.
 
 Write the input file yourself from the query output (no extra tooling needed):
 
 ```bash
 cat > "$V/urls.json" <<'JSON'
 { "base": "<primaryDomain.url from Step 2>",
-  "urls": ["/collections/…", "/products/…", "…"] }
+  "urls": ["/collections/…", "/products/…", "/pages/contact"] }
 JSON
 node "$CLAUDE_PLUGIN_ROOT/skills/store-health-check/scripts/check-urls.mjs" "$V/urls.json"
 ```
 
-When `menus` was not measured, take `base` from the profile's `store` domain's
-primary domain — it is in the same query as the menus; if that whole query was
-denied, fall back to `https://<store>` and say so in the report.
+The run can take several minutes on a large store (200 URLs, 10s timeout
+each, 4 at a time) — give the command a generous shell timeout rather than
+letting a default kill it silently.
+
+`base` is `shop.primaryDomain.url` from the collections query (it rides along
+there precisely because that query needs no extra scope). If even that is
+missing, do **not** run the link check — report it "not measured". Never
+substitute the `*.myshopify.com` domain: its canonical redirect makes every
+URL come back `offDomain` and the check silently measures nothing.
 
 Read the JSON it prints:
 
@@ -131,9 +169,11 @@ Read the JSON it prints:
   password page.** Report that as one finding (`lock:password-page`), skip all
   other link findings — behind the lock every URL redirects there and none of
   it means anything.
-- entries with `status >= 400` → finding `link:<path>:<status>`. For a
-  collection or product URL, name the admin object it came from: "exists in
-  admin but returns 404 — not published to the Online Store, or broken".
+- entries with `status >= 400` → finding `link:<path>` (no status in the id —
+  a 404 that becomes a 503 is the same broken link; report the current status
+  as detail). For a collection or product URL, name the admin object it came
+  from: "exists in admin but returns 404 — not published to the Online Store,
+  or broken".
 - entries with `offDomain: true` → informational: name the URL and where it
   went.
 - entries with `skipped: true` → not fetched (a `mailto:`, `tel:` or similar
@@ -150,7 +190,11 @@ For every finding id from Steps 3–4:
 - id present in the previous `findings` → label it **open since
   <firstSeenAt>** and carry the old `firstSeenAt` forward;
 - id not present before → label it **new**, `firstSeenAt` = now;
-- previous id that no longer occurs → drop it silently. Resolved is resolved.
+- previous id that no longer occurs → drop it silently — resolved is
+  resolved — but **only if the check that produces that id prefix actually
+  ran**. For a check reported "not measured", and for all `link:*` ids when
+  the password page was hit, carry the previous entries forward unchanged; a
+  finding you could not look at is not resolved.
 
 ## Step 6 — Report, then remember
 

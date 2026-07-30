@@ -6,6 +6,14 @@
 # and seo.description are empty — a deliberate SEO description should not
 # be flagged just because the body description is blank.
 query CollectionsHealth($first: Int!) {
+  # Rides along here because this query needs no extra scope, so the link
+  # check always has a `base` to work from.
+  shop {
+    primaryDomain {
+      url
+      host
+    }
+  }
   collections(first: $first) {
     nodes {
       id
@@ -13,7 +21,6 @@ query CollectionsHealth($first: Int!) {
       handle
       description
       seo {
-        title
         description
       }
     }

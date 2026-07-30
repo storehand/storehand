@@ -154,10 +154,13 @@ than reporting the count you happened to fetch.
 
 ## Step 5 — Update the marker
 
-**Only after a successful report**, write `.storehand/state.json`:
+**Only after a successful report**, update `.storehand/state.json`: read the
+file first, keep every key you did not write — other skills keep their own
+memory in this same file — replace only `lastBriefingAt`, and write the whole
+object back:
 
 ```json
-{ "lastBriefingAt": "<the ISO timestamp of this run>" }
+{ "lastBriefingAt": "<the ISO timestamp of this run>", "…other keys…": "…" }
 ```
 
 If any query failed, leave the file untouched. Moving the marker after a partial

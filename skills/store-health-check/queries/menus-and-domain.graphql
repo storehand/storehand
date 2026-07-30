@@ -26,5 +26,8 @@ query MenusAndDomain($first: Int!) {
         }
       }
     }
+    pageInfo {
+      hasNextPage
+    }
   }
 }
