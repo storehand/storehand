@@ -76,17 +76,65 @@ missing.
 
 Documented in the query file itself so the next person does not rediscover it.
 
+## Second run, same day — through the CLI this time
+
+`shopify store auth` and `shopify store execute` both work. Authenticated with a
+store owner account, three read-only scopes, API version `2026-07`. All four
+queries ran through `--query-file` + `--variable-file` exactly as the skill
+prescribes.
+
+Result of the first real briefing (first run, so a 24-hour window):
+
+```
+0 new orders · 0 payments needing attention · 0 cancellations, 0 refunds
+49 variants at or below the stock threshold (list truncated, more pages exist)
+  - 34 sold out (0 units)
+  - 15 low (1-5 units)
+  - across 14 products
+```
+
+**The re-check earned its place immediately.** The stock query returned 50
+variants; one of them held more than the threshold and was dropped. Same index
+lag as finding 2, caught live, through the real code path.
+
+## Finding 3 — a flat threshold buries the signal
+
+49 alerts across 14 products is a wall of text, not a briefing. On a young store,
+plenty of variants sit at zero because they were never restocked, not because
+something happened last night.
+
+**Fixed by:** above roughly fifteen items the skill now reports the shape (how
+many at zero, how many merely low, across how many products) and offers the full
+list on request. It also has to say when a list was truncated instead of
+reporting the count it happened to fetch.
+
+## Finding 4 — connecting is where a real user gets stuck
+
+Two obstacles that had nothing to do with the queries:
+
+1. **No browser on a server.** `shopify store auth` opens a browser and its
+   redirect target is hardcoded to `http://127.0.0.1:13387/auth/callback`, so the
+   browser has to be on the same machine as the CLI. On a headless host you need
+   an SSH tunnel (`ssh -N -L 13387:127.0.0.1:13387 user@host`) — being on the same
+   private network is not enough, because the CLI binds to `127.0.0.1` only.
+2. **"Unauthorized Access" from the store admin.** The authorization page can
+   reject the request before showing any consent screen, with no explanation. In
+   this case the fix was signing in to that specific store's admin first. An
+   account without permission to install apps would fail the same way and look
+   identical.
+
+Both belong in the user-facing connection guide, because both will happen to
+other people.
+
 ## Still unverified
 
-1. **The CLI path.** `shopify store auth` + `shopify store execute` has not run
-   yet. That is what the skill actually calls, so it remains the last open
-   question before this skill can be called done.
-2. **Order-specific filters.** `financial_status:…` and `cancelled_at:…` could
+1. **Order-specific filters.** `financial_status:…` and `cancelled_at:…` could
    not be proven, because the store has no orders and — per finding 1 — an
    ignored filter and an empty result look identical. The date and grouping
-   syntax they rely on is proven; the field names are not.
-3. **A real morning.** This is a verification run, not a briefing. The skill has
-   not yet produced a report a human read over coffee, which is the actual bar.
+   syntax they rely on is proven; the field names are not. This stays open until
+   the store takes its first order.
+2. **More than one morning.** One briefing is not a routine. The bar is a report
+   a human reads over coffee, several days running, and still wants.
 
 ## What was awkward
 

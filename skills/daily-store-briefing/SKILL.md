@@ -102,6 +102,10 @@ The quoted heredoc (`<<'JSON'`) stops the shell touching the contents, so the
 filter values arrive exactly as written. Read each command's output before moving
 on; an error here must never become a zero in the report.
 
+The CLI prints progress lines with terminal escape codes before the JSON. They go
+to stderr, so `2>/dev/null` gives you clean JSON — but only do that once a command
+has proven it works, because it also hides the errors you need to see.
+
 ## Step 3b — Re-check what came back
 
 **Shopify silently ignores filter terms it does not recognise, and its search
@@ -137,6 +141,16 @@ Fixed shape, in this order:
 3. **Suggested actions** — concrete and few. Never act on them.
 
 Keep it short enough to read with a coffee. Detail on request.
+
+**When a category is long, summarise instead of listing.** A young or seasonal
+store can easily have fifty variants under the threshold; printing all of them
+buries the two things that actually changed. Above roughly fifteen, give the
+shape — how many are at zero, how many are merely low, across how many products —
+and offer the full list on request. Verified on a real store: a flat threshold
+produced 49 alerts across 14 products, which is a wall of text, not a briefing.
+
+If a list was truncated (`hasNextPage`), say the real number is higher rather
+than reporting the count you happened to fetch.
 
 ## Step 5 — Update the marker
 
