@@ -6,25 +6,38 @@ description: Open the day with a short read-only briefing on a Shopify store —
 # Daily store briefing
 
 One short report, every morning, from four read-only queries. Writes nothing to
-the store, ever. Read `shared/safety.md` and `shared/store-profile.md` first.
+the store, ever.
+
+**Two kinds of path, do not mix them up.** Files belonging to this plugin —
+`shared/safety.md`, `shared/store-profile.md`, `shared/api-version.md` and the
+`queries/` directory — live under `$CLAUDE_PLUGIN_ROOT`. The store profile
+(`.storehand/`) lives in the user's working directory. If `$CLAUDE_PLUGIN_ROOT`
+is empty, say so and stop; do not guess a path.
+
+Read `$CLAUDE_PLUGIN_ROOT/shared/safety.md` and
+`$CLAUDE_PLUGIN_ROOT/shared/store-profile.md` before you start.
 
 ## Step 1 — Load the profile
 
 Read `.storehand/store.yaml` from the working directory. You need `store`,
 `timezone`, `currency` and `inventory.low_stock_threshold`.
 
-- **No `.storehand/`:** tell the user to run `/storehand-setup` and stop. Do not
-  ask for the domain and carry on — the profile is what makes the other skills
-  work too.
-- **A required key is missing:** name the key, point at `/storehand-setup`, stop.
+- **No `.storehand/`:** tell the user to run the `storehand-setup` skill and
+  stop. Do not ask for the domain and carry on — the profile is what makes the
+  other skills work too.
+- **A required key is missing:** name the key, point at `storehand-setup`, stop.
 
 ## Step 2 — Work out the period
 
 Read `.storehand/state.json`:
 
-- `lastBriefingAt` present → the period starts there.
-- Absent or unreadable → the period starts 24 hours ago, and say so in the
-  report ("first briefing, showing the last 24 hours").
+- **`lastBriefingAt` present and readable** → the period starts there.
+- **File absent** → this is a first run. The period starts 24 hours ago; say so
+  in the report ("first briefing, showing the last 24 hours").
+- **File present but unreadable or missing `lastBriefingAt`** → this is a
+  failure, not a first run. Say so explicitly: the marker is damaged, you are
+  falling back to 24 hours, and **anything older than that is unreported**. Do
+  not label it a first briefing — that hides a gap of unknown size.
 
 Format the boundary as an ISO 8601 UTC timestamp. Interpret day boundaries in
 the profile's `timezone`, not in UTC and not in yours.
@@ -33,33 +46,61 @@ the profile's `timezone`, not in UTC and not in yours.
 
 All four are read-only. **Never add `--allow-mutations`.**
 
+The Shopify search filters contain single quotes, colons and `<=`. Inlining that
+in a shell string is how you end up with a query that returns nothing and a
+report that calls it a quiet day. **Write the variables to a file and pass
+`--variable-file`.** Never build them inline.
+
+Check `$CLAUDE_PLUGIN_ROOT/shared/api-version.md` first. If it names a pinned
+version, add `--version <handle>` to every call below. If it says the version is
+not pinned, leave the flag out — the CLI then uses the latest stable version.
+
+Make a scratch directory once, then substitute `<since>` (Step 2) and
+`<threshold>` (Step 1) with real values as you write each file:
+
 ```bash
-shopify store execute --store <store> --json \
-  --query-file queries/orders-since.graphql \
-  --variables '{"query":"created_at:>'"'"'<since>'"'"'","first":50}'
+V="$(mktemp -d)"
 ```
 
 ```bash
+cat > "$V/orders.json" <<'JSON'
+{"query":"created_at:>'<since>'","first":50}
+JSON
 shopify store execute --store <store> --json \
-  --query-file queries/payment-problems.graphql \
-  --variables '{"query":"financial_status:pending OR financial_status:unpaid OR financial_status:expired","first":50}'
+  --query-file "$CLAUDE_PLUGIN_ROOT/skills/daily-store-briefing/queries/orders-since.graphql" \
+  --variable-file "$V/orders.json"
 ```
 
 ```bash
+cat > "$V/payments.json" <<'JSON'
+{"query":"financial_status:pending OR financial_status:unpaid OR financial_status:expired","first":50}
+JSON
 shopify store execute --store <store> --json \
-  --query-file queries/cancellations-and-refunds.graphql \
-  --variables '{"cancelled":"cancelled_at:><since>","refunded":"updated_at:><since> AND (financial_status:refunded OR financial_status:partially_refunded)","first":50}'
+  --query-file "$CLAUDE_PLUGIN_ROOT/skills/daily-store-briefing/queries/payment-problems.graphql" \
+  --variable-file "$V/payments.json"
 ```
 
 ```bash
+cat > "$V/cancellations.json" <<'JSON'
+{"cancelled":"cancelled_at:>'<since>'","refunded":"updated_at:>'<since>' AND (financial_status:refunded OR financial_status:partially_refunded)","first":50}
+JSON
 shopify store execute --store <store> --json \
-  --query-file queries/low-stock.graphql \
-  --variables '{"query":"inventory_quantity:<=<threshold>","first":50}'
+  --query-file "$CLAUDE_PLUGIN_ROOT/skills/daily-store-briefing/queries/cancellations-and-refunds.graphql" \
+  --variable-file "$V/cancellations.json"
 ```
 
-Quoting note: the search values contain single quotes and comparison operators.
-Build the `--variables` JSON carefully and check the CLI's error output rather
-than assuming a silent success.
+```bash
+cat > "$V/stock.json" <<'JSON'
+{"query":"inventory_quantity:<=<threshold>","first":50}
+JSON
+shopify store execute --store <store> --json \
+  --query-file "$CLAUDE_PLUGIN_ROOT/skills/daily-store-briefing/queries/low-stock.graphql" \
+  --variable-file "$V/stock.json"
+```
+
+The quoted heredoc (`<<'JSON'`) stops the shell touching the contents, so the
+filter values arrive exactly as written. Read each command's output before moving
+on; an error here must never become a zero in the report.
 
 If `pageInfo.hasNextPage` is true, say the list was truncated. Do not paginate —
 a briefing that needs more than 50 orders needs a report, not a briefing.
@@ -71,7 +112,9 @@ Fixed shape, in this order:
 1. **One headline line**, counts and money only:
    > 3 new orders (€412) · 1 failed payment · 2 variants low · no cancellations
 2. **What needs attention**, only the categories that are non-empty. Name orders
-   by their `name` (`#1042`), not their GraphQL id.
+   by their `name` (`#1042`), not their GraphQL id. Mention the sales channel
+   (`sourceName`) only when orders came from more than one — otherwise it is
+   noise.
 3. **Suggested actions** — concrete and few. Never act on them.
 
 Keep it short enough to read with a coffee. Detail on request.
@@ -94,7 +137,8 @@ run means tomorrow silently skips whatever today never saw.
 | `shopify` not found or older than 4.5 | Show the install or `shopify upgrade` step, stop |
 | Not authenticated / token expired | Show the exact `shopify store auth --store … --scopes read_orders,read_products,read_inventory` line, stop |
 | One query fails | Report the categories that succeeded and state clearly which one failed, with the literal error |
-| A field does not exist (API version drift) | Show the error, name the query file, say the query needs updating — see `shared/api-version.md` |
+| A field does not exist (API version drift) | Show the error, name the query file, say the query needs updating — see `$CLAUDE_PLUGIN_ROOT/shared/api-version.md` |
+| `$CLAUDE_PLUGIN_ROOT` is empty | Stop and say the plugin root could not be resolved. Never guess where the query files are |
 | All queries fail | Report the failure. Never "nothing happened today" |
 
 A quiet day and a broken integration look identical in a report that hides

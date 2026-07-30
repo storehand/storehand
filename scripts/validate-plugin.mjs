@@ -8,6 +8,24 @@ import path from 'node:path';
 
 const FRONTMATTER = /^---\r?\n([\s\S]*?)\r?\n---/;
 const QUERY_FILE_REF = /--query-file\s+(\S+)/g;
+const MARKDOWN_LINK = /\]\(([^)\s]+)(?:\s+"[^"]*")?\)/g;
+const BLOCK_SCALAR = /^[>|][-+]?\d*$/;
+const PLUGIN_ROOT_VAR = /^\$\{?CLAUDE_PLUGIN_ROOT\}?\//;
+const EXTERNAL_LINK = /^(https?:|mailto:|#|\/)/;
+
+/**
+ * Turns a path as written in a skill into a real path, or null when it depends
+ * on something we cannot know. Quotes are stripped and $CLAUDE_PLUGIN_ROOT is
+ * resolved against the plugin root; any other variable is unresolvable.
+ */
+function resolveSkillPath(reference, root, skillDir) {
+  const bare = reference.replace(/^["']|["']$/g, '');
+  if (PLUGIN_ROOT_VAR.test(bare)) {
+    return path.join(root, bare.replace(PLUGIN_ROOT_VAR, ''));
+  }
+  if (bare.includes('$')) return null;
+  return path.join(skillDir, bare);
+}
 
 /** Returns { name, description, ... } or null when there is no frontmatter. */
 export function parseFrontmatter(text) {
@@ -31,7 +49,7 @@ function readJson(file, errors) {
   }
 }
 
-function checkSkill(skillDir, errors) {
+function checkSkill(skillDir, root, errors) {
   const name = path.basename(skillDir);
   const skillFile = path.join(skillDir, 'SKILL.md');
 
@@ -56,12 +74,44 @@ function checkSkill(skillDir, errors) {
   }
   if (!frontmatter.description) {
     errors.push(`skills/${name}/SKILL.md: frontmatter has no description`);
+  } else if (BLOCK_SCALAR.test(frontmatter.description)) {
+    errors.push(
+      `skills/${name}/SKILL.md: description uses a YAML block scalar, which this parser does not read — put it on one line`
+    );
   }
 
   for (const [, ref] of text.matchAll(QUERY_FILE_REF)) {
-    const target = path.join(skillDir, ref);
-    if (!fs.existsSync(target)) {
+    const target = resolveSkillPath(ref, root, skillDir);
+    if (target === null) {
+      errors.push(
+        `skills/${name}/SKILL.md: references ${ref}, which cannot be resolved — anchor query paths on $CLAUDE_PLUGIN_ROOT`
+      );
+    } else if (!fs.existsSync(target)) {
       errors.push(`skills/${name}/SKILL.md: references ${ref}, which does not exist`);
+    }
+  }
+}
+
+/** Every .md file in the plugin, ignoring dependency and VCS directories. */
+function markdownFiles(dir, found = []) {
+  for (const entry of fs.readdirSync(dir, { withFileTypes: true })) {
+    if (entry.name === 'node_modules' || entry.name === '.git') continue;
+    const full = path.join(dir, entry.name);
+    if (fs.statSync(full).isDirectory()) markdownFiles(full, found);
+    else if (entry.name.endsWith('.md')) found.push(full);
+  }
+  return found;
+}
+
+function checkMarkdownLinks(root, errors) {
+  for (const file of markdownFiles(root)) {
+    const text = fs.readFileSync(file, 'utf8');
+    for (const [, target] of text.matchAll(MARKDOWN_LINK)) {
+      if (EXTERNAL_LINK.test(target)) continue;
+      const resolved = path.join(path.dirname(file), target.split('#')[0]);
+      if (!fs.existsSync(resolved)) {
+        errors.push(`${path.relative(root, file)}: links to ${target}, which does not exist`);
+      }
     }
   }
 }
@@ -93,11 +143,22 @@ export function validatePlugin(root) {
   }
 
   const skillsDir = path.join(root, 'skills');
+  let skillCount = 0;
   if (fs.existsSync(skillsDir)) {
     for (const entry of fs.readdirSync(skillsDir, { withFileTypes: true })) {
-      if (entry.isDirectory()) checkSkill(path.join(skillsDir, entry.name), errors);
+      const full = path.join(skillsDir, entry.name);
+      // statSync follows symlinks; readdir's own isDirectory() does not, and a
+      // symlinked skill would otherwise be skipped without a word.
+      if (!fs.existsSync(full) || !fs.statSync(full).isDirectory()) continue;
+      skillCount += 1;
+      checkSkill(full, root, errors);
     }
   }
+  if (skillCount === 0) {
+    errors.push('skills/: no skills found — a plugin with no skills does nothing');
+  }
+
+  checkMarkdownLinks(root, errors);
 
   return errors;
 }

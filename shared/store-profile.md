@@ -31,7 +31,7 @@ Machine-readable settings. Required keys:
 | `competitors` | List of URLs for the price watch skill; may be empty |
 
 If a required key is missing, tell the user which one and point them at
-`/storehand-setup`. Do not guess a default.
+the `storehand-setup` skill. Do not guess a default.
 
 ## `state.json` — skill bookkeeping
 

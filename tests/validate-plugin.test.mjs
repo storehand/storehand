@@ -99,6 +99,81 @@ test('a referenced query file that exists is fine', () => {
   assert.deepEqual(validatePlugin(root), []);
 });
 
+test('a query path anchored on $CLAUDE_PLUGIN_ROOT resolves against the root', () => {
+  const root = makeFixture();
+  addSkill(
+    root,
+    'daily-store-briefing',
+    `${goodSkill('daily-store-briefing')}
+Run: --query-file "$CLAUDE_PLUGIN_ROOT/skills/daily-store-briefing/queries/orders.graphql"
+`
+  );
+  fs.mkdirSync(path.join(root, 'skills', 'daily-store-briefing', 'queries'), { recursive: true });
+  fs.writeFileSync(
+    path.join(root, 'skills', 'daily-store-briefing', 'queries', 'orders.graphql'),
+    '{ shop { name } }'
+  );
+  assert.deepEqual(validatePlugin(root), []);
+});
+
+test('a query path with an unresolvable variable is an error, not a skip', () => {
+  const root = makeFixture();
+  addSkill(
+    root,
+    'daily-store-briefing',
+    `${goodSkill('daily-store-briefing')}\nRun: --query-file "$Q/orders.graphql"\n`
+  );
+  const errors = validatePlugin(root);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /cannot be resolved/);
+});
+
+test('a description written as a YAML block scalar is rejected', () => {
+  const root = makeFixture();
+  addSkill(root, 'blocky', '---\nname: blocky\ndescription: >\n  A long description\n  over two lines.\n---\n\nBody.\n');
+  const errors = validatePlugin(root);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /description/);
+});
+
+test('a symlinked skill directory is checked, not skipped', () => {
+  const root = makeFixture();
+  const real = path.join(root, 'elsewhere');
+  fs.mkdirSync(real, { recursive: true });
+  fs.symlinkSync(real, path.join(root, 'skills', 'linked'));
+  const errors = validatePlugin(root);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /linked.*SKILL\.md/);
+});
+
+test('a plugin with no skills at all is an error', () => {
+  const root = makeFixture();
+  const errors = validatePlugin(root);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /no skills/);
+});
+
+test('a markdown link to a missing file is an error', () => {
+  const root = makeFixture();
+  addSkill(root, 'daily-store-briefing', goodSkill('daily-store-briefing'));
+  fs.writeFileSync(path.join(root, 'README.md'), 'See [the guide](docs/gone.md).\n');
+  const errors = validatePlugin(root);
+  assert.equal(errors.length, 1);
+  assert.match(errors[0], /docs\/gone\.md/);
+});
+
+test('markdown links to existing files and to the web are fine', () => {
+  const root = makeFixture();
+  addSkill(root, 'daily-store-briefing', goodSkill('daily-store-briefing'));
+  fs.mkdirSync(path.join(root, 'docs'), { recursive: true });
+  fs.writeFileSync(path.join(root, 'docs', 'connect.md'), 'Hi.\n');
+  fs.writeFileSync(
+    path.join(root, 'README.md'),
+    'See [the guide](docs/connect.md) and [Shopify](https://shopify.dev).\n'
+  );
+  assert.deepEqual(validatePlugin(root), []);
+});
+
 test('a plugin listed in marketplace.json must exist on disk', () => {
   const root = makeFixture();
   fs.writeFileSync(

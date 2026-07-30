@@ -34,9 +34,16 @@ skills/<skill-name>/
 
 `SKILL.md` frontmatter needs `name` and `description`. Write the description for
 the model that has to decide whether to use your skill: say what it does and
-when to reach for it.
+when to reach for it. Keep it on **one line** — YAML block scalars (`>` or `|`)
+are rejected by the validator, because a silently truncated description makes a
+skill impossible to find.
+
+Paths inside a skill are not relative to the user's directory. Anchor anything
+belonging to the plugin on `$CLAUDE_PLUGIN_ROOT`; the validator resolves query
+paths written that way and rejects ones it cannot resolve.
 
 ## Contributor licence agreement
 
-Pull requests require signing the CLA — see [CLA.md](CLA.md). A bot handles it
-on your first pull request.
+Pull requests require agreeing to the CLA — see [CLA.md](CLA.md). Until the
+signing bot is wired up, say in your pull request that you have read CLA.md and
+agree to it.

@@ -14,13 +14,23 @@ shopify store execute --store <store>.myshopify.com --json \
   --query '{ publicApiVersions { handle supported } }'
 ```
 
-Take the newest `supported: true` handle, record it below with the date, and add
-`--version <handle>` to every query call in every skill.
+Take the newest `supported: true` handle and record it below with the date. That
+is the only edit needed — skills read the pinned version from this file and pass
+it as `--version` themselves.
 
 ## Pinned version
 
-_Not yet pinned. See above._
+_Not yet pinned._ While this line says "not pinned", skills leave `--version` off
+and the CLI uses the latest stable version.
+
+To pin, replace the line above with exactly this shape:
+
+```
+Pinned: 2026-07 (verified 2026-08-15)
+```
 
 ## Why one place
 
-Six skills share these queries. A version bump must be one edit, not six.
+Every skill shares these queries, and more skills are coming. A version bump has
+to be one edit here, not one edit per skill — which is why skills read this file
+instead of hardcoding a version.

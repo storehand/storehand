@@ -6,7 +6,15 @@ description: Set up StoreHand for a Shopify store — create the store profile i
 # StoreHand setup
 
 Get the user from a fresh install to a working, connected store profile. Aim for
-under ten minutes. Read `shared/safety.md` before you start.
+under ten minutes.
+
+**Two kinds of path, do not mix them up.** This plugin's own files —
+`shared/safety.md` and the `templates/` directory — live under
+`$CLAUDE_PLUGIN_ROOT`. The profile you are about to create (`.storehand/`) goes
+in the user's working directory. If `$CLAUDE_PLUGIN_ROOT` is empty, say so and
+stop; do not guess a path.
+
+Read `$CLAUDE_PLUGIN_ROOT/shared/safety.md` before you start.
 
 ## Step 1 — Check the Shopify CLI
 
@@ -44,9 +52,10 @@ Ask these one at a time. Do not fill in guesses.
 Create `.storehand/` and copy the templates from this plugin, filling in the
 answers:
 
-- `store.yaml` from `templates/storehand/store.yaml` — replace every placeholder
-- `store.md` from `templates/storehand/store.md` — leave the comment prompts in
-  place so the user can fill them in later
+- `store.yaml` from `$CLAUDE_PLUGIN_ROOT/templates/storehand/store.yaml` —
+  replace every placeholder
+- `store.md` from `$CLAUDE_PLUGIN_ROOT/templates/storehand/store.md` — leave the
+  comment prompts in place so the user can fill them in later
 
 Then tell the user plainly: **`store.md` is what makes the writing skills sound
 like their store.** It is worth ten minutes of their time, but it is not needed
