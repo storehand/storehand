@@ -1,0 +1,37 @@
+{
+  "name": "storehand",
+  "version": "0.0.1",
+  "description": "An extra pair of hands for your store. A Claude Code plugin with open-source skills that turn Claude into your daily Shopify operator — daily briefings, health checks, listing writing, price watching, SEO audits and weekly reports. Read-only by default, no telemetry.",
+  "keywords": [
+    "shopify",
+    "ai",
+    "claude",
+    "agent",
+    "skills",
+    "ecommerce",
+    "automation",
+    "store-operations",
+    "mcp"
+  ],
+  "homepage": "https://github.com/storehand",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/storehand/storehand.git"
+  },
+  "license": "Apache-2.0",
+  "author": "Steffano van Hoven (https://github.com/Steffano198)",
+  "main": "index.js",
+  "files": [
+    "index.js",
+    "README.md",
+    "LICENSE",
+    "NOTICE",
+    "skills/",
+    "shared/",
+    "templates/",
+    ".claude-plugin/"
+  ],
+  "engines": {
+    "node": ">=18"
+  }
+}

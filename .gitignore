@@ -1,0 +1,4 @@
+node_modules/
+.storehand/state.json
+.DS_Store
+*.log
