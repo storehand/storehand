@@ -47,6 +47,11 @@ version, pass `--version <handle>` on every call. All calls are read-only —
 V="$(mktemp -d)"
 ```
 
+Shell state does not survive between tool calls. Either set `V` again in every
+call below, or pick one fixed scratch path and reuse it — an unset `V` turns
+`"$V/products.json"` into `/products.json`, which fails or writes to the wrong
+place without ever mentioning `V`.
+
 ```bash
 printf '%s' '{"query":"status:active","first":100}' > "$V/products.json"
 shopify store execute --store <store> --json \
@@ -207,6 +212,11 @@ Fixed shape:
 1. One headline line, counts only:
    > 2 sold out but active · 1 broken link (**new**) · 1 discount without an
    > end date · 12 metadata gaps
+
+   Every check that ran gets a number here, **including a zero**; every check
+   that did not gets the words "not measured". A measured zero is a result and
+   the owner should see it. A check that is simply missing from the headline
+   reads like a zero without being one.
 2. Only the non-empty categories, new findings first, with the "open since"
    labels. Name products and collections by handle or title, never by GraphQL
    id. Above ~15 items in one category, give the shape (how many, how bad)
