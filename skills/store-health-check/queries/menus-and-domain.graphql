@@ -1,0 +1,25 @@
+# The storefront's primary domain plus every navigation menu item (two levels).
+# Read-only. Needs the read_online_store_navigation scope for `menus`;
+# shop.primaryDomain only needs what any StoreHand token already has.
+query MenusAndDomain($first: Int!) {
+  shop {
+    primaryDomain {
+      url
+      host
+    }
+  }
+  menus(first: $first) {
+    nodes {
+      handle
+      title
+      items {
+        title
+        url
+        items {
+          title
+          url
+        }
+      }
+    }
+  }
+}
