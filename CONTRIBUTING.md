@@ -14,15 +14,29 @@
    user's own store.
 5. **Queries are files.** Skills use committed `.graphql` files, not queries
    improvised at runtime — a briefing must give the same answer twice.
+6. **No real store ever appears in this repository.** Not a handle, not a shop
+   id, not a customer's domain, not a figure that identifies one. Dogfood notes
+   describe what happened, with placeholders. See `SECURITY.md`.
+
+## Set this up once
+
+```bash
+git config core.hooksPath hooks
+```
+
+That turns on the pre-commit scan for sensitive data. Do it before your first
+commit — it is far cheaper to stop a leak here than to remove it from a public
+history later.
 
 ## Before you open a pull request
 
 ```bash
+node scripts/scan-secrets.mjs .
 node --test
 node scripts/validate-plugin.mjs .
 ```
 
-Both must pass. CI runs exactly these.
+All three must pass. CI runs exactly these.
 
 ## Adding a skill
 

@@ -34,6 +34,12 @@
     "templates/",
     ".claude-plugin/"
   ],
+  "scripts": {
+    "test": "node --test",
+    "scan": "node scripts/scan-secrets.mjs .",
+    "validate": "node scripts/validate-plugin.mjs .",
+    "check": "npm run scan && npm test && npm run validate"
+  },
   "engines": {
     "node": ">=18"
   }
