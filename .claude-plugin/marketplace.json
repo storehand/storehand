@@ -1,0 +1,19 @@
+{
+  "name": "storehand",
+  "owner": { "name": "StoreHand" },
+  "metadata": {
+    "description": "An extra pair of hands for your store."
+  },
+  "plugins": [
+    {
+      "name": "storehand",
+      "source": "./",
+      "description": "Open-source skills that turn Claude into your daily Shopify operator — daily briefings, health checks, listing writing, price watching, SEO audits and weekly reports. Runs through the official Shopify CLI. Read-only by default. Sends no telemetry.",
+      "version": "0.1.0",
+      "author": { "name": "Steffano van Hoven" },
+      "license": "Apache-2.0",
+      "homepage": "https://github.com/storehand/storehand",
+      "keywords": ["shopify", "ecommerce", "store-operations", "admin-api", "graphql"]
+    }
+  ]
+}
