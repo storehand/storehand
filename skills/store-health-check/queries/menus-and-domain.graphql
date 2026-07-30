@@ -1,4 +1,5 @@
-# The storefront's primary domain plus every navigation menu item (two levels).
+# The storefront's primary domain plus every navigation menu item (all three
+# levels Shopify allows).
 # Read-only. Needs the read_online_store_navigation scope for `menus`;
 # shop.primaryDomain only needs what any StoreHand token already has.
 query MenusAndDomain($first: Int!) {
@@ -18,6 +19,10 @@ query MenusAndDomain($first: Int!) {
         items {
           title
           url
+          items {
+            title
+            url
+          }
         }
       }
     }

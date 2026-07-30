@@ -1,6 +1,7 @@
 # Active products with their inventory and metadata presence. Read-only.
 # Serves two checks: sold-out-but-active (totalInventory <= 0 while status
-# ACTIVE and tracksInventory) and metadata gaps (seo.description, image alt).
+# ACTIVE and tracksInventory) and metadata gaps (seo title/description
+# presence and image alt).
 # $query example: "status:active"
 #
 # The filter narrows, it does not guarantee (verified 2026-07-30 on a live

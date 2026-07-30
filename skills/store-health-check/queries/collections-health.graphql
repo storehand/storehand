@@ -2,6 +2,9 @@
 # description for the metadata check. Read-only.
 # Collection.onlineStoreUrl does not exist on 2026-07 (verified live) —
 # a collection URL that 404s IS the finding, whatever the publication state.
+# A collection only counts as a metadata gap when BOTH the body description
+# and seo.description are empty — a deliberate SEO description should not
+# be flagged just because the body description is blank.
 query CollectionsHealth($first: Int!) {
   collections(first: $first) {
     nodes {
@@ -9,6 +12,10 @@ query CollectionsHealth($first: Int!) {
       title
       handle
       description
+      seo {
+        title
+        description
+      }
     }
     pageInfo {
       hasNextPage

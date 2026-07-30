@@ -2,8 +2,10 @@
 # Needs the read_discounts scope. Three findings are derived from this:
 # ACTIVE without endsAt, expired in the past week, ACTIVE ending within 7 days.
 # Statuses are re-checked against the clock — never trust status alone.
+# Sorted by last update, newest first: on a store with more discounts than
+# $first, the stale tail drops off, not the recent ones.
 query Discounts($first: Int!) {
-  discountNodes(first: $first) {
+  discountNodes(first: $first, sortKey: UPDATED_AT, reverse: true) {
     nodes {
       id
       discount {
@@ -14,6 +16,8 @@ query Discounts($first: Int!) {
         ... on DiscountAutomaticBasic { title status startsAt endsAt }
         ... on DiscountAutomaticBxgy { title status startsAt endsAt }
         ... on DiscountAutomaticFreeShipping { title status startsAt endsAt }
+        ... on DiscountAutomaticApp { title status startsAt endsAt }
+        ... on DiscountCodeApp { title status startsAt endsAt }
       }
     }
     pageInfo {
