@@ -1,0 +1,21 @@
+# Variants at or below the store's low-stock threshold. Read-only.
+# $query example: "inventory_quantity:<=5"
+query LowStock($query: String!, $first: Int!) {
+  productVariants(first: $first, query: $query) {
+    nodes {
+      id
+      title
+      sku
+      inventoryQuantity
+      product {
+        id
+        title
+        handle
+        status
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}

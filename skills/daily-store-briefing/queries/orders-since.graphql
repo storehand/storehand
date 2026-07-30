@@ -1,0 +1,25 @@
+# Orders created since a given moment. Read-only.
+# $query example: "created_at:>'2026-07-29T00:00:00Z'"
+query OrdersSince($query: String!, $first: Int!) {
+  orders(first: $first, query: $query, sortKey: CREATED_AT, reverse: true) {
+    nodes {
+      id
+      name
+      createdAt
+      displayFinancialStatus
+      displayFulfillmentStatus
+      totalPriceSet {
+        shopMoney {
+          amount
+          currencyCode
+        }
+      }
+      customer {
+        displayName
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}

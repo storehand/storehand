@@ -1,0 +1,24 @@
+# Orders whose payment needs attention. Read-only.
+# $query example: "financial_status:pending OR financial_status:unpaid OR financial_status:expired"
+query PaymentProblems($query: String!, $first: Int!) {
+  orders(first: $first, query: $query, sortKey: CREATED_AT, reverse: true) {
+    nodes {
+      id
+      name
+      createdAt
+      displayFinancialStatus
+      totalPriceSet {
+        shopMoney {
+          amount
+          currencyCode
+        }
+      }
+      customer {
+        displayName
+      }
+    }
+    pageInfo {
+      hasNextPage
+    }
+  }
+}

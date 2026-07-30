@@ -1,0 +1,33 @@
+# Cancellations and refunds in one round trip. Read-only.
+# $cancelled example: "cancelled_at:>'2026-07-29T00:00:00Z'"
+# $refunded example: "updated_at:>'2026-07-29T00:00:00Z' AND (financial_status:refunded OR financial_status:partially_refunded)"
+query CancellationsAndRefunds($cancelled: String!, $refunded: String!, $first: Int!) {
+  cancelled: orders(first: $first, query: $cancelled) {
+    nodes {
+      id
+      name
+      cancelledAt
+      cancelReason
+      totalPriceSet {
+        shopMoney {
+          amount
+          currencyCode
+        }
+      }
+    }
+  }
+  refunded: orders(first: $first, query: $refunded) {
+    nodes {
+      id
+      name
+      updatedAt
+      displayFinancialStatus
+      totalRefundedSet {
+        shopMoney {
+          amount
+          currencyCode
+        }
+      }
+    }
+  }
+}
