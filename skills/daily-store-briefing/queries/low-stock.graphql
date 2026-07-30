@@ -1,5 +1,10 @@
 # Variants at or below the store's low-stock threshold. Read-only.
 # $query example: "inventory_quantity:<=5"
+#
+# The filter narrows, it does not guarantee. Verified 2026-07-30 against a live
+# store: this filter returned 113 variants of which one held 24 units, because
+# the variant search index lags behind the data. Always re-check
+# inventoryQuantity against the threshold before reporting.
 query LowStock($query: String!, $first: Int!) {
   productVariants(first: $first, query: $query) {
     nodes {

@@ -102,6 +102,25 @@ The quoted heredoc (`<<'JSON'`) stops the shell touching the contents, so the
 filter values arrive exactly as written. Read each command's output before moving
 on; an error here must never become a zero in the report.
 
+## Step 3b — Re-check what came back
+
+**Shopify silently ignores filter terms it does not recognise, and its search
+index lags behind the data.** Verified on a live store: a misspelled field
+returns everything unfiltered without an error, and `inventory_quantity:<=5`
+returned a variant holding 24 units. Treat every filter as a way to fetch less,
+never as proof.
+
+Before anything reaches the report:
+
+- **Orders, payments, cancellations, refunds:** drop records whose `createdAt`
+  (or `cancelledAt`, or `updatedAt`) falls outside the period from Step 2.
+- **Low stock:** drop variants whose `inventoryQuantity` is above the threshold
+  from `store.yaml`.
+
+If more than a couple of records fail this re-check, say so in the report. It
+means the filter is not working, and a filter that lets wrong records through is
+also capable of hiding right ones you never saw.
+
 If `pageInfo.hasNextPage` is true, say the list was truncated. Do not paginate —
 a briefing that needs more than 50 orders needs a report, not a briefing.
 
