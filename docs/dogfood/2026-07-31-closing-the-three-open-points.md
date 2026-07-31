@@ -97,3 +97,28 @@ all four in one run — now automatically instead of by hand.
 The second one is the lesson worth keeping: **a tool built to catch silent
 success shipped with silent success in it.** It was only visible because the
 tool was run for real instead of trusted on green unit tests.
+
+## 5. Morning briefing run (skill #1)
+
+Third real run, period 2026-07-30T12:42:41Z → 2026-07-31T07:13:16Z. All four
+queries returned cleanly (exit 0, non-empty stdout).
+
+Nothing on orders, payments, cancellations or refunds — the store still has no
+payment provider, so no order can be placed. Stock: 49 variants at or below the
+threshold of 5 across 14 products, 33 of them at zero, list truncated at 50 so
+the real number is higher.
+
+Two things worth recording:
+
+- **Step 3b caught one variant again.** One record came back holding more than
+  the threshold — Shopify's search index lagging behind the data, the same
+  behaviour documented earlier. Without the re-check the briefing would have
+  reported 50 instead of 49. The step is not theoretical.
+- **The shared-state contract held for the third run running.** The marker moved
+  to the new timestamp and the `healthCheck` key came back untouched: same
+  `lastRunAt`, both findings and their `firstSeenAt` intact.
+
+The briefing itself keeps confirming the same thing: with no orders possible,
+half of skill #1 cannot be exercised at all. That is a store limitation, not a
+skill limitation, and it is the same blocker as the four unprovable order
+filters in section 4.
