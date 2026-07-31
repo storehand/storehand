@@ -1,7 +1,9 @@
 # Discount codes and automatic discounts with their window. Read-only.
-# Needs the read_discounts scope. Three findings are derived from this:
-# ACTIVE without endsAt, expired in the past week, ACTIVE ending within 7 days.
-# Statuses are re-checked against the clock — never trust status alone.
+# Needs the read_discounts scope. Four findings are derived from this: pending
+# (ACTIVE or SCHEDULED) without endsAt, expired in the past week, pending and
+# ending within 7 days, and status contradicting its own dates.
+# Statuses are re-checked against the clock — never trust status alone, which
+# is why startsAt comes along even though no rule reads it in isolation.
 # Sorted by last update, newest first: on a store with more discounts than
 # $first, the stale tail drops off, not the recent ones.
 query Discounts($first: Int!) {
