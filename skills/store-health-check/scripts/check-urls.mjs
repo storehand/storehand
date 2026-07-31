@@ -8,6 +8,7 @@
  */
 import fs from 'node:fs';
 import path from 'node:path';
+import crypto from 'node:crypto';
 import { fileURLToPath } from 'node:url';
 
 const USER_AGENT = 'StoreHand health check (+https://github.com/storehand/storehand)';
@@ -16,6 +17,8 @@ const DEFAULT_TIMEOUT_MS = 10000;
 const DEFAULT_MAX_URLS = 200;
 const DEFAULT_CONCURRENCY = 4;
 const MAX_CONCURRENCY = 8;
+const MAX_PROBE_FAMILIES = 3;
+const NOT_FOUND_STATUSES = new Set([404, 410]);
 
 export async function checkUrl(base, url, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
   let baseHost;
@@ -86,6 +89,55 @@ export async function checkUrl(base, url, { timeoutMs = DEFAULT_TIMEOUT_MS } = {
   return { url, finalUrl: current, redirects, error: `more than ${MAX_REDIRECTS} redirects` };
 }
 
+/*
+ * Calibrates the check before trusting a single 200. A theme that renders its
+ * "page not found" view with HTTP 200 (a soft 404) would make every URL pass,
+ * and the report would say "no broken links" having measured nothing. So ask
+ * the storefront for a page that cannot exist and see whether it says 404.
+ *
+ * One probe per URL family (the first path segment), because a theme can get
+ * /products right and /pages wrong. Verdict is deliberately three-valued:
+ * false only when every probe gave a real not-found, true when any family
+ * answered 200, and null when a probe could not complete — an unreachable
+ * probe is not a clean bill of health.
+ */
+function probeFamilies(urls) {
+  const families = [];
+  for (const url of urls) {
+    let segment;
+    try {
+      segment = new URL(url, 'https://placeholder.invalid').pathname.split('/').filter(Boolean)[0];
+    } catch {
+      continue;
+    }
+    if (!segment || families.includes(segment)) continue;
+    families.push(segment);
+    if (families.length >= MAX_PROBE_FAMILIES) break;
+  }
+  return families;
+}
+
+export async function probeNotFound(base, urls, { timeoutMs = DEFAULT_TIMEOUT_MS } = {}) {
+  const families = probeFamilies(urls);
+  if (families.length === 0) {
+    return { checked: [], soft404: null, soft404Families: [] };
+  }
+  const nonce = crypto.randomUUID().slice(0, 8);
+  const checked = await Promise.all(families.map(async (family) => {
+    const probePath = `/${family}/storehand-missing-probe-${nonce}`;
+    const result = await checkUrl(base, probePath, { timeoutMs })
+      .catch((error) => ({ error: error.message }));
+    return { family, path: probePath, status: result.status, error: result.error };
+  }));
+
+  const soft404Families = checked.filter((p) => p.status === 200).map((p) => p.family);
+  const allConclusive = checked.every((p) => p.status === 200 || NOT_FOUND_STATUSES.has(p.status));
+  let soft404 = null;
+  if (soft404Families.length > 0) soft404 = true;
+  else if (allConclusive) soft404 = false;
+  return { checked, soft404, soft404Families };
+}
+
 export async function checkUrls({
   base, urls,
   timeoutMs = DEFAULT_TIMEOUT_MS,
@@ -105,8 +157,9 @@ export async function checkUrls({
         .catch((error) => ({ url: list[index], finalUrl: null, redirects: [], error: error.message }));
     }
   }
+  const probe = await probeNotFound(base, list, { timeoutMs });
   await Promise.all(Array.from({ length: Math.min(clampedConcurrency, list.length) || 1 }, worker));
-  return { base, checked: results, truncated: urls.length > list.length };
+  return { base, checked: results, truncated: urls.length > list.length, probe };
 }
 
 const invokedDirectly =

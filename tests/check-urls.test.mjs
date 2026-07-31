@@ -10,7 +10,7 @@ import { promisify } from 'node:util';
 import { fileURLToPath } from 'node:url';
 
 const execFileAsync = promisify(execFile);
-import { checkUrl, checkUrls } from '../skills/store-health-check/scripts/check-urls.mjs';
+import { checkUrl, checkUrls, probeNotFound } from '../skills/store-health-check/scripts/check-urls.mjs';
 
 const SCRIPT_PATH = fileURLToPath(
   new URL('../skills/store-health-check/scripts/check-urls.mjs', import.meta.url),
@@ -174,6 +174,95 @@ test('a negative concurrency falls back to at least one worker', async () => {
     const report = await checkUrls({ base, urls: ['/1', '/2'], concurrency: -1, timeoutMs: 2000 });
     assert.equal(report.checked[0].status, 200);
     assert.equal(report.checked[1].status, 200);
+  } finally { server.close(); }
+});
+
+// The not-found probe. Without it a theme that answers 200 for missing pages
+// turns the whole link check into a silent false negative: every URL "passes"
+// and the report says "no broken links" while nothing was really measured.
+
+test('a storefront with real 404s gives a clean probe verdict', async () => {
+  const { server, base } = await startServer(route({}));
+  try {
+    const probe = await probeNotFound(base, ['/products/a', '/collections/b'], { timeoutMs: 2000 });
+    assert.equal(probe.soft404, false);
+    assert.deepEqual(probe.soft404Families, []);
+    assert.equal(probe.checked.length, 2);
+  } finally { server.close(); }
+});
+
+test('a storefront that answers 200 for everything is caught as a soft 404', async () => {
+  const { server, base } = await startServer((req, res) => { res.writeHead(200); res.end('page'); });
+  try {
+    const probe = await probeNotFound(base, ['/products/a'], { timeoutMs: 2000 });
+    assert.equal(probe.soft404, true);
+    assert.deepEqual(probe.soft404Families, ['products']);
+  } finally { server.close(); }
+});
+
+test('the probe reports per family, so one bad template does not condemn the rest', async () => {
+  const { server, base } = await startServer((req, res) => {
+    if (req.url.startsWith('/pages/')) { res.writeHead(200); res.end('soft'); return; }
+    res.writeHead(404); res.end('not found');
+  });
+  try {
+    const probe = await probeNotFound(base, ['/products/a', '/pages/b'], { timeoutMs: 2000 });
+    assert.equal(probe.soft404, true);
+    assert.deepEqual(probe.soft404Families, ['pages']);
+  } finally { server.close(); }
+});
+
+test('a probe that cannot complete is unknown, never a clean bill of health', async () => {
+  const { server, base } = await startServer(route({}));
+  server.close();
+  try {
+    const probe = await probeNotFound(base, ['/products/a'], { timeoutMs: 300 });
+    assert.equal(probe.soft404, null);
+    assert.notEqual(probe.soft404, false);
+  } finally { server.close(); }
+});
+
+test('probe paths carry a nonce so they cannot collide with a real page', async () => {
+  const seen = [];
+  const { server, base } = await startServer((req, res) => {
+    seen.push(req.url); res.writeHead(404); res.end();
+  });
+  try {
+    await probeNotFound(base, ['/products/a'], { timeoutMs: 2000 });
+    const second = await probeNotFound(base, ['/products/a'], { timeoutMs: 2000 });
+    assert.equal(seen.length, 2);
+    assert.notEqual(seen[0], seen[1]);
+    assert.equal(second.checked[0].path.startsWith('/products/'), true);
+  } finally { server.close(); }
+});
+
+test('the probe covers at most three families, so the request cost stays bounded', async () => {
+  const { server, base } = await startServer(route({}));
+  try {
+    const probe = await probeNotFound(
+      base,
+      ['/products/a', '/collections/b', '/pages/c', '/blogs/d', '/policies/e'],
+      { timeoutMs: 2000 },
+    );
+    assert.equal(probe.checked.length, 3);
+  } finally { server.close(); }
+});
+
+test('checkUrls runs the probe and hands the verdict to the report', async () => {
+  const { server, base } = await startServer((req, res) => { res.writeHead(200); res.end('page'); });
+  try {
+    const report = await checkUrls({ base, urls: ['/products/real'], timeoutMs: 2000 });
+    assert.equal(report.probe.soft404, true);
+    assert.equal(report.checked[0].status, 200);
+  } finally { server.close(); }
+});
+
+test('URLs without a path segment do not produce a probe', async () => {
+  const { server, base } = await startServer(route({ '/': (req, res) => { res.writeHead(200); res.end(); } }));
+  try {
+    const probe = await probeNotFound(base, ['/'], { timeoutMs: 2000 });
+    assert.equal(probe.checked.length, 0);
+    assert.equal(probe.soft404, null);
   } finally { server.close(); }
 });
 
