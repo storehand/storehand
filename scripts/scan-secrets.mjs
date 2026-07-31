@@ -26,6 +26,12 @@ import { execFileSync } from 'node:child_process';
 const ALLOWED_HOSTS = new Set([
   'apache.org',
   'www.apache.org',
+  // StoreHand's own hosts. The rule guards against a *store's* or a customer's
+  // domain slipping into the repo; our own project addresses are the whole
+  // point of publishing it.
+  'storehand.github.io',
+  'getstorehand.com',
+  'www.getstorehand.com',
   'github.com',
   'docs.github.com',
   'shopify.com',
