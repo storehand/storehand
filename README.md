@@ -96,6 +96,14 @@ needs no app of your own.
 StoreHand sends nothing anywhere. No usage pings, no prompts, no store data.
 The only network traffic is the Shopify CLI talking to your own store.
 
+## A hosted version
+
+The skills here are free and open source, and always will be — clone the repo
+and run them yourself. A hosted version for shop owners who would rather not run
+anything at all is being built; it will be announced here first.
+
+<https://storehand.github.io>
+
 ## Contributing
 
 Bug reports and skill ideas are welcome — see
