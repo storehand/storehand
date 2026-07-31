@@ -110,12 +110,26 @@ Re-check everything; filters narrow, they do not guarantee.
   `variants.pageInfo.hasNextPage` is true, keep the finding rather than
   excluding it — a hidden `DENY` variant may be the stockout.
   Finding id: `oos:<handle>`.
-- **Discounts** (skip entirely if not measured) — compare against the clock,
-  not against `status` alone:
-  - `ACTIVE` and `endsAt` null → `promo:<title>:no-end` (informational);
+- **Discounts** (skip entirely if not measured) — the clock decides whether to
+  look, `status` only decides what to call it. A discount counts as *pending*
+  when its status is `ACTIVE` or `SCHEDULED`:
+  - pending and `endsAt` null → `promo:<title>:no-end` (informational). This
+    covers `SCHEDULED` too: a discount with no end date is the same open-ended
+    promo whether it is running already or starts next week;
   - `endsAt` within the past 7 days → `promo:<title>:just-expired`
-    ("was that intentional?");
-  - `ACTIVE` and `endsAt` within the next 7 days → `promo:<title>:ends-soon`.
+    ("was that intentional?"), whatever the status says;
+  - pending and `endsAt` within the next 7 days → `promo:<title>:ends-soon`.
+    For a `SCHEDULED` one, name both dates: it opens and closes inside the
+    window between two weekly runs, so this is the only run that will mention it;
+  - `status` and the dates contradict each other → `promo:<title>:status-mismatch`.
+    Three shapes count: `EXPIRED` while `endsAt` is still in the future,
+    `SCHEDULED` while `startsAt` is already past, and `ACTIVE` while `startsAt`
+    is in the future. Report the contradiction itself rather than picking a
+    side — from outside, there is no way to tell which half is wrong, and both
+    readings are worth a look. Quote both values: "Shopify says EXPIRED, the
+    end date is 3 days away." A plausible cause for the first shape is a
+    discount that hit its usage limit early, but **that is untested** — say
+    what you see, not what you suspect.
 
   On a store with more discounts than the query fetches, the just-expired
   finding is a lower bound — an old untouched discount can fall outside the
@@ -172,7 +186,23 @@ missing, do **not** run the link check — report it "not measured". Never
 substitute the `*.myshopify.com` domain: its canonical redirect makes every
 URL come back `offDomain` and the check silently measures nothing.
 
-Read the JSON it prints:
+Read the JSON it prints. **Read `probe` first — it decides whether the rest
+means anything.** Before checking the list, the script asks the storefront for
+a page that cannot exist (one per URL family, at most three) and reports what
+came back:
+
+- `probe.soft404: false` → the storefront returns real 404s; the link results
+  below are trustworthy.
+- `probe.soft404: true` → this theme answers **200 for missing pages**. Every
+  URL in the affected families would "pass" no matter what. Report those
+  families as **not measured** — naming `probe.soft404Families` and the fact
+  that a soft 404 is itself worth fixing — and never write "no broken links"
+  for them. Families that probed clean are still reportable.
+- `probe.soft404: null` → the probe could not complete (network error, timeout,
+  password page, or no path segments to probe). Report the link check "not
+  measured"; an unreachable probe is not a clean bill of health.
+
+Then the list itself:
 
 - any entry with `passwordPage: true` → **the storefront is behind its
   password page.** Report that as one finding (`lock:password-page`), skip all
