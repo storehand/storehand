@@ -38,7 +38,8 @@
     "test": "node --test",
     "scan": "node scripts/scan-secrets.mjs .",
     "validate": "node scripts/validate-plugin.mjs .",
-    "check": "npm run scan && npm test && npm run validate"
+    "check": "npm run scan && npm test && npm run validate",
+    "verify-filters": "node scripts/verify-filters.mjs"
   },
   "engines": {
     "node": ">=18"
