@@ -1,9 +1,15 @@
-# StoreHand
+# StoreHand — Claude skills for Shopify
 
 **An extra pair of hands for your store.**
 
-Open-source Claude Code skills that turn Claude into your daily Shopify
-operator. Read-only by default, no telemetry, no account.
+Open-source Claude Code skills that turn Claude into your daily Shopify store
+operator: a morning briefing on orders and payments, a weekly store health
+check, and product copy written in your own brand voice. Read-only by default,
+no telemetry, no account, nothing running on someone else's server.
+
+[Skills](#skills-that-ship-today) · [Roadmap](#roadmap) ·
+[Quickstart](#quickstart) · [What it can see](#what-storehand-may-see) ·
+[Hosted version](https://storehand.github.io)
 
 ```
 You: how did the store do overnight?
@@ -20,32 +26,69 @@ StoreHand: 3 new orders (€412) · 1 failed payment · 2 variants low
   - Reorder the blazer before the weekend
 ```
 
-## Why
+## Why another set of Claude skills for Shopify
 
 Shopify's own AI Toolkit gives an assistant the *rails* and the *knowledge* — 21
-skills covering Admin GraphQL, ShopifyQL, Liquid, Polaris and more. What it does
-not ship is a single operator routine: an agent still only does what you prompt
-it to do, every time, from scratch.
+agent skills covering Admin GraphQL, ShopifyQL, Liquid, Polaris and more. What it
+does not ship is a single operator routine: an agent still only does what you
+prompt it to do, every time, from scratch.
 
 StoreHand is the *routine* on top. Which questions get asked every morning,
 which thresholds apply to **your** store, in what shape the answer arrives, and
 one rule that never bends: **StoreHand proposes, you approve.**
 
-## Skills
+It is a Claude Code plugin, not an app you install in your Shopify admin. The
+skills are markdown and version-pinned GraphQL; the official Shopify CLI does
+the talking. Nothing runs on anyone else's server.
 
-| Skill | Does | Writes? |
+## Who this is for
+
+Shop owners and operators who already use Claude Code and would rather answer
+"what changed overnight?" in ten seconds than click through four admin screens.
+It helps if you are comfortable in a terminal — if you are not, the hosted
+version below is the one to wait for.
+
+## Skills that ship today
+
+| Skill | What it does | Writes to your store? |
 |---|---|---|
-| `storehand-setup` | Creates your store profile and connects the store | Local files only |
-| `daily-store-briefing` | Orders, payment problems, cancellations, stock alerts | Local files only |
-| `store-health-check` | Weekly check: sold-out-but-active products, discount windows, broken storefront links, metadata gaps | Local files only |
+| `storehand-setup` | Builds your store profile and connects the store | No — local files only |
+| `daily-store-briefing` | Morning briefing: new orders, failed payments, cancellations, refunds, low-stock alerts | No — local files only |
+| `store-health-check` | Weekly Shopify store audit: sold-out-but-active products, discount windows, broken storefront links, missing SEO metadata | No — local files only |
 
-None of the skills write anything to your store. "Local files only" means
+None of the three writes anything to your store. "Local files only" means
 `.storehand/` in your own directory — the profile, a timestamp so tomorrow's
 briefing knows where to start, and the health check's memory of what it found
 last time.
 
-More on the way: product listing writer, price and competitor watch, SEO
-metadata audit, weekly store report.
+## Roadmap
+
+Six skills make up version 1. Three are shipped and running against a real shop;
+three are not written yet. A skill is only listed as shipped once it has been
+run against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
+
+| # | Skill | What it will do | Status |
+|---|---|---|---|
+| 1 | `daily-store-briefing` | Orders, payments, cancellations, stock | **Shipped** |
+| 2 | `store-health-check` | Weekly store audit, broken links, discount and metadata gaps | **Shipped** |
+| 3 | `product-listing-writer` | Product titles, descriptions, SEO fields and alt text in your brand voice — proposed in a file you edit, applied only on a separate command | Designed, in build |
+| 4 | `price-and-competitor-watch` | Follows a fixed list of competitor product pages and reports the gap against your margin rules | Planned |
+| 5 | `seo-metadata-audit` | Sweeps the whole catalogue for titles, meta descriptions and alt text that lag behind, and prepares the fixes | Planned |
+| 6 | `weekly-store-report` | Revenue, conversion and returning customers, with concrete actions | Planned |
+
+Skill 3 is the first one that will write to a store, and it changes the rules
+above: it needs `write_products`, and it works in two steps. First a proposal
+file listing the current and the suggested text for every field, which you can
+read and edit. Then a separate command that applies exactly what you left in
+that file — and skips anything you changed in the admin in the meantime rather
+than overwriting your work.
+
+Everything else stays read-only.
+
+**Deliberately not in version 1:** customer-service chat and email, review
+replies, email marketing and social, discount campaign creation, A/B testing.
+Each needs either realtime infrastructure or a third-party platform, and both
+break the "no external services" promise this project runs on.
 
 ## Quickstart
 
@@ -95,6 +138,14 @@ needs no app of your own.
 
 StoreHand sends nothing anywhere. No usage pings, no prompts, no store data.
 The only network traffic is the Shopify CLI talking to your own store.
+
+## A hosted version
+
+The skills here are free and open source, and always will be — clone the repo
+and run them yourself. A hosted version for shop owners who would rather not run
+anything at all is being built; it will be announced here first.
+
+<https://storehand.github.io>
 
 ## Contributing
 
