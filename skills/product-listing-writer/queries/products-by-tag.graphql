@@ -1,0 +1,17 @@
+query ProductsByTag($query: String!, $first: Int!) {
+  products(first: $first, query: $query) {
+    pageInfo { hasNextPage }
+    nodes {
+      id
+      handle
+      title
+      description
+      descriptionHtml
+      seo { title description }
+      media(first: 10) {
+        pageInfo { hasNextPage }
+        nodes { ... on MediaImage { id alt } }
+      }
+    }
+  }
+}

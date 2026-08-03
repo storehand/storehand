@@ -1,0 +1,11 @@
+mutation UpdateListing($product: ProductUpdateInput!) {
+  productUpdate(product: $product) {
+    product {
+      id
+      handle
+      title
+      seo { title description }
+    }
+    userErrors { field message }
+  }
+}
