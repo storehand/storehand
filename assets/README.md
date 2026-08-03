@@ -1,23 +1,30 @@
 # Brand assets
 
-## `storehand-logo.png` — placeholder, meant to be replaced
+| File | Size | Use |
+|---|---|---|
+| `logo-wide.png` | 500 × 100 (5:1) | The horizontal lockup — mark plus wordmark. The README header |
+| `logo-mark.png` | 500 × 500 (1:1) | The mark alone. Avatars, the org picture, favicons, Product Hunt |
 
-The README points at this one file. Drop your own artwork here under the same
-name and the header updates everywhere it is used; nothing else needs editing.
+## Two things worth knowing before you swap either file
 
-What the file has to survive:
+**Never set both `width` and `height` unless they match the file's own ratio.**
+The header briefly rendered `logo-wide.png` at `265 × 265`, which squeezed a 5:1
+image into a square and flattened the lettering. It is now `400 × 80`, which is
+the same 5:1. If you replace the file at a different ratio, change those numbers
+with it — or give only `width` and let the browser work out the rest.
 
-| | |
-|---|---|
-| Size | 240 × 240, square |
-| Format | PNG, transparent or white background |
-| Weight | Under 2 MB (Product Hunt's limit; ours is far below it) |
-| Legibility | It ends up at 24 px as a favicon and around 96 px in the README. Test it small before deciding — fine detail and any lettering disappear first |
+**Filenames have no spaces on purpose.** A space becomes `%20` in the raw URL,
+which is easy to get wrong by hand and silently returns a 404 that renders as a
+broken image rather than an error.
 
-Keep it monochrome. The rest of this project is black on white, the terminal it
-runs in is monochrome, and a mark that needs colour to work is a mark that
-breaks in half the places it lands.
+## Where the README points
 
-The README references the file through an absolute `raw.githubusercontent.com`
-URL rather than a relative path, because `assets/` is not shipped in the npm
-tarball — a relative link renders on GitHub but breaks on the npm package page.
+The header uses an absolute `raw.githubusercontent.com` URL rather than a
+relative path, because `assets/` is not shipped in the npm tarball — a relative
+link renders on GitHub but breaks on the npm package page.
+
+## Sizes to check before shipping new artwork
+
+The mark ends up at 24 px as a favicon and around 96 px in most listings. Look
+at it that small before deciding: fine detail and lettering disappear first, and
+a 1200 px canvas hides that completely.
