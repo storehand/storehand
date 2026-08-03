@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="https://raw.githubusercontent.com/storehand/storehand/main/assets/storehand-logo.png" alt="" width="96" height="96" />
+  <img src="https://raw.githubusercontent.com/storehand/storehand/refs/heads/main/assets/Lang%20Logo.png" alt="" width="96" height="96" />
 </p>
 
 # StoreHand — Claude skills for Shopify
