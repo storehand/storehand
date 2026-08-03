@@ -166,3 +166,43 @@ test('a field genuinely absent from values still reports not-measured', () => {
     wasInProposal: 'Oud', isNow: null,
   }]);
 });
+
+// These three build the live-fetch shapes by hand, without the `live()`
+// helper — the helper always fills in `values` and `media`, so it could
+// never catch an `?.` being dropped from the code it is meant to protect.
+
+test('a live product with no values key at all reports not-measured for every field, without throwing', () => {
+  const plan = planApply(
+    proposal([
+      { name: 'title', current: 'Oud', proposed: 'Nieuw' },
+      { name: 'seo.title', current: '', proposed: 'T' },
+    ]),
+    { products: [{ id: 'gid://shopify/Product/PRODUCT_ID', handle: 'linnen-blazer' }] },
+  );
+  assert.equal(plan.apply.length, 0);
+  assert.deepEqual(plan.skipped, [
+    { handle: 'linnen-blazer', field: 'title', reason: 'not-measured', wasInProposal: 'Oud', isNow: null },
+    { handle: 'linnen-blazer', field: 'seo.title', reason: 'not-measured', wasInProposal: '', isNow: null },
+  ]);
+});
+
+test('a live product with no media key at all reports media-gone for an image.alt field, without throwing', () => {
+  const plan = planApply(
+    proposal([{ name: 'image.alt', mediaId: 'gid://shopify/MediaImage/MEDIA_ID', current: '', proposed: 'Alt' }]),
+    { products: [{ id: 'gid://shopify/Product/PRODUCT_ID', handle: 'linnen-blazer' }] },
+  );
+  assert.equal(plan.apply.length, 0);
+  assert.deepEqual(plan.skipped, [{
+    handle: 'linnen-blazer', field: 'image.alt', reason: 'media-gone',
+    wasInProposal: '', isNow: null,
+  }]);
+});
+
+test('a liveData object with no products key at all reports every product as not found, without throwing', () => {
+  const plan = planApply(
+    proposal([{ name: 'title', current: 'Oud', proposed: 'Nieuw' }]),
+    {},
+  );
+  assert.deepEqual(plan.missing, [{ handle: 'linnen-blazer', reason: 'product-not-found' }]);
+  assert.equal(plan.apply.length, 0);
+});

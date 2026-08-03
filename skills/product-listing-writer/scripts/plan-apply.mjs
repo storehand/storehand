@@ -6,10 +6,10 @@
 const PRODUCT_FIELDS = new Set(['title', 'description', 'seo.title', 'seo.description']);
 
 function intoProductInput(input, name, value) {
-  if (name === 'title') input.title = value;
-  else if (name === 'description') input.descriptionHtml = value;
-  else if (name === 'seo.title') (input.seo ??= {}).title = value;
-  else if (name === 'seo.description') (input.seo ??= {}).description = value;
+  if (name === 'title') return { ...input, title: value };
+  if (name === 'description') return { ...input, descriptionHtml: value };
+  if (name === 'seo.title') return { ...input, seo: { ...input.seo, title: value } };
+  if (name === 'seo.description') return { ...input, seo: { ...input.seo, description: value } };
   return input;
 }
 
@@ -77,7 +77,9 @@ export function planApply(proposal, liveData) {
       }
 
       if (isAlt) entry.files.push({ id: field.mediaId, alt: field.proposed });
-      else if (PRODUCT_FIELDS.has(field.name)) intoProductInput(entry.productInput, field.name, field.proposed);
+      else if (PRODUCT_FIELDS.has(field.name)) {
+        entry.productInput = intoProductInput(entry.productInput, field.name, field.proposed);
+      }
     }
 
     if (Object.keys(entry.productInput).length > 0 || entry.files.length > 0) plan.apply.push(entry);
