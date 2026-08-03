@@ -161,3 +161,135 @@ Then tell the user, in this shape:
 
 Never read the proposal back to the user in the chat. The file is the artefact;
 a wall of copy in the terminal is how it gets approved unread.
+
+## Step 6 — Read the proposal back
+
+Read `.storehand/store.yaml` for `store`, then parse the file the user pointed
+at (default: the newest in `.storehand/proposals/`).
+
+```bash
+node --input-type=module -e '
+  import { parseProposal } from "'"$CLAUDE_PLUGIN_ROOT"'/skills/product-listing-writer/scripts/proposal.mjs";
+  import fs from "node:fs";
+  console.log(JSON.stringify(parseProposal(fs.readFileSync(process.argv[1], "utf8")), null, 2));
+' ".storehand/proposals/<file>.md" > "$V/proposal.json"
+```
+
+If the parser throws, **stop**. Show the message literally — it names the
+product and the field — and ask the user to fix that spot. Never apply the part
+of a file you could read: a proposal you half understand is a store you half
+rewrite.
+
+Check `store` in the file against `store.yaml`. Different? Stop and say so.
+
+## Step 7 — Re-fetch the live values
+
+Read-only, no `--allow-mutations` yet. Build the `handle:a OR handle:b …`
+query Step 2 uses for its named-handles path, against
+`products-by-handle.graphql`, quoting every handle from the proposal in one
+call — regardless of whether the proposal itself came from a handle list, a
+collection or a tag, apply always works from the concrete handles it parsed
+out of the file. Re-check the result the same way that path does: drop any
+returned product whose `handle` is not one you asked for, and treat any
+asked-for handle missing from the result as a re-fetch failure — see below.
+
+Build `$V/live.json` in the shape `plan-apply.mjs` expects — one entry per
+product, `values` keyed by the same field names the proposal uses:
+
+```json
+{ "products": [
+  { "id": "gid://shopify/Product/PRODUCT_ID", "handle": "linnen-blazer",
+    "values": { "title": "…", "description": "…", "seo.title": "…", "seo.description": "…" },
+    "media": [ { "id": "gid://shopify/MediaImage/MEDIA_ID", "alt": "" } ] } ] }
+```
+
+`description` here is the **`descriptionHtml`** value, because that is what the
+proposal recorded and what will be written back. A field the query did not
+return must be left out, not filled with `""` — a missing value is a conflict,
+and `plan-apply.mjs` treats it as one.
+
+If the re-fetch fails for any product, stop. Applying to the products that did
+answer leaves the owner with a half-applied proposal and no record of which half.
+
+## Step 8 — Decide what may be written
+
+```bash
+node "$CLAUDE_PLUGIN_ROOT/skills/product-listing-writer/scripts/plan-apply.mjs" \
+  ".storehand/proposals/<file>.md" "$V/live.json" > "$V/plan.json"
+```
+
+Read the JSON. Then show the user, before touching anything:
+
+- **apply** — per product, which fields and the new values, shortened to one
+  line each.
+- **skipped** with `changed-in-admin` — name the field, what the proposal
+  recorded and what is there now. This is the mechanism working, not an error.
+- **skipped** with `media-gone` or `not-measured` — say which and why.
+- **unchanged** and **missing** — counts, and name the missing handles.
+
+Then ask for approval, in the words of `shared/safety.md`: one approval covers
+this change set and nothing else. If `plan.apply` is empty, say so and stop —
+there is nothing to approve.
+
+## Step 9 — Write
+
+Only after an explicit yes. This is the one place in StoreHand that passes
+`--allow-mutations`, and it needs the `write_products` scope; a store connected
+with the read-only scopes will get ACCESS_DENIED here (see the Errors table).
+
+Per product in `plan.apply`, when `productInput` is not empty:
+
+```bash
+printf '%s' '{"product":{"id":"gid://shopify/Product/PRODUCT_ID","title":"…"}}' > "$V/m.json"
+shopify store execute --store <store> --json --allow-mutations \
+  --query-file "$CLAUDE_PLUGIN_ROOT/skills/product-listing-writer/mutations/product-update.graphql" \
+  --variable-file "$V/m.json"
+```
+
+The `product` variable is the entry's `productInput` with `"id"` added.
+
+Per product with a non-empty `files`, one call for all of its images:
+
+```bash
+printf '%s' '{"files":[{"id":"gid://shopify/MediaImage/MEDIA_ID","alt":"…"}]}' > "$V/f.json"
+shopify store execute --store <store> --json --allow-mutations \
+  --query-file "$CLAUDE_PLUGIN_ROOT/skills/product-listing-writer/mutations/file-update.graphql" \
+  --variable-file "$V/f.json"
+```
+
+**Read `userErrors` on every response.** A mutation that returns HTTP 200 with a
+populated `userErrors` array wrote nothing. Treat it as a failure for that
+product, report it, and keep going with the rest — then say at the end exactly
+which products succeeded and which did not.
+
+Go product by product. Never batch across products: when one fails you must
+still be able to say precisely where the run stopped.
+
+## Step 10 — Report
+
+1. One line: how many products written, how many fields, how many skipped.
+2. Per written product, the fields that changed.
+3. The skipped list again, because it is what the owner needs to act on — a
+   `changed-in-admin` field is still waiting for a decision.
+4. Where the proposal file is, and that it was **not** modified: re-running
+   apply on the same file is safe and will report everything as `unchanged`.
+
+Do not write `.storehand/state.json`. This skill keeps no memory between runs —
+the proposal file is the record.
+
+## Errors — never report a write you did not make
+
+| Situation | What to do |
+|---|---|
+| `shopify` not found or older than 4.5 | Show the install or `shopify upgrade` step, stop |
+| Not authenticated / token expired | Show the auth line from `storehand-setup`, stop |
+| ACCESS_DENIED on the mutation | The store is connected read-only. Show `shopify store auth --store <store> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation,write_products` and stop. Never retry without it |
+| The parser refuses the proposal | Show the message literally, stop, change nothing |
+| `store` in the proposal ≠ `store.yaml` | Stop — this proposal belongs to another store |
+| Re-fetch fails for any product | Stop before writing anything |
+| `userErrors` non-empty | That product was not written. Report it and continue with the rest |
+| A field does not exist (API version drift) | Show the error, name the query file, point at `$CLAUDE_PLUGIN_ROOT/shared/api-version.md` |
+| `$CLAUDE_PLUGIN_ROOT` is empty | Stop; never guess where plugin files are |
+
+A store that was not written and a store that was written wrong look identical
+in a report that hides errors. Never let them.
