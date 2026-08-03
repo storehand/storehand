@@ -242,3 +242,154 @@ test('two different handles pointing at the same product gid are refused, naming
   });
   assert.throws(() => parseProposal(text), /PRODUCT_ID/);
 });
+
+// A shop owner types a `~~~` divider (or pastes a snippet containing one)
+// straight into VOORSTEL, exactly where the preamble tells them to edit — no
+// tampering with the fence delimiter needed. fenceFor already ran when Claude
+// rendered the file, so it cannot react to text the human adds afterwards.
+
+test('a VOORSTEL value containing a bare ~~~ line is refused, naming the product and the field', () => {
+  const text = `# StoreHand listing proposal
+
+- store: \`your-store.myshopify.com\`
+- created: \`t\`
+- api-version: \`v\`
+
+---
+
+## x
+
+<!-- product: gid://shopify/Product/PRODUCT_ID -->
+
+### description
+
+HUIDIG
+~~~
+~~~
+
+VOORSTEL
+~~~
+<p>Eerste deel</p>
+~~~
+<p>Tweede deel</p>
+~~~
+`;
+  assert.throws(() => parseProposal(text), /description.*\bx\b|\bx\b.*description/);
+});
+
+test('a VOORSTEL value containing a ~~~~~ line is refused the same way', () => {
+  const text = `# StoreHand listing proposal
+
+- store: \`your-store.myshopify.com\`
+- created: \`t\`
+- api-version: \`v\`
+
+---
+
+## x
+
+<!-- product: gid://shopify/Product/PRODUCT_ID -->
+
+### description
+
+HUIDIG
+~~~
+~~~
+
+VOORSTEL
+~~~~~
+<p>Eerste deel</p>
+~~~~~
+<p>Tweede deel</p>
+~~~~~
+`;
+  assert.throws(() => parseProposal(text), /description.*\bx\b|\bx\b.*description/);
+});
+
+test('the equivalent inside HUIDIG is already refused — pinned down so it cannot regress', () => {
+  const text = `# StoreHand listing proposal
+
+- store: \`your-store.myshopify.com\`
+- created: \`t\`
+- api-version: \`v\`
+
+---
+
+## x
+
+<!-- product: gid://shopify/Product/PRODUCT_ID -->
+
+### description
+
+HUIDIG
+~~~
+<p>Eerste deel</p>
+~~~
+<p>Tweede deel</p>
+~~~
+
+VOORSTEL
+~~~
+nieuw
+~~~
+`;
+  assert.throws(() => parseProposal(text), /VOORSTEL/);
+});
+
+test('an inline ~~~ mid-sentence in VOORSTEL is still accepted and untouched', () => {
+  const source = {
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [{ name: 'description', current: '', proposed: 'Use ~~~ inline like this, not alone on a line.' }] }],
+  };
+  const back = parseProposal(renderProposal(source));
+  assert.equal(back.products[0].fields[0].proposed, 'Use ~~~ inline like this, not alone on a line.');
+});
+
+test('an ordinary multi-line value with no tildes at all still round-trips unchanged', () => {
+  const source = {
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [{ name: 'description', current: '', proposed: '<p>Regel een</p>\n<p>Regel twee</p>\n<p>Regel drie</p>' }] }],
+  };
+  const back = parseProposal(renderProposal(source));
+  assert.equal(back.products[0].fields[0].proposed, '<p>Regel een</p>\n<p>Regel twee</p>\n<p>Regel drie</p>');
+});
+
+test('two image.alt blocks with different media ids on one product both parse, one photo each', () => {
+  const source = {
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [
+        { name: 'image.alt', mediaId: 'gid://shopify/MediaImage/MEDIA_ID', current: '', proposed: 'Voorkant' },
+        { name: 'image.alt', mediaId: 'gid://shopify/MediaImage/MEDIA_ID_2', current: '', proposed: 'Achterkant' },
+      ] }],
+  };
+  const back = parseProposal(renderProposal(source));
+  assert.equal(back.products[0].fields.length, 2);
+  assert.deepEqual(back.products[0].fields, source.products[0].fields);
+});
+
+test('two image.alt blocks with the same media id are refused, naming the media id', () => {
+  const text = renderProposal({
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [
+        { name: 'image.alt', mediaId: 'gid://shopify/MediaImage/MEDIA_ID', current: '', proposed: 'Voorkant' },
+        { name: 'image.alt', mediaId: 'gid://shopify/MediaImage/MEDIA_ID', current: '', proposed: 'Nog een keer' },
+      ] }],
+  });
+  assert.throws(() => parseProposal(text), /MEDIA_ID/);
+});
+
+test('a duplicated non-alt field is still refused, as before', () => {
+  const text = renderProposal({
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [
+        { name: 'title', current: 'a', proposed: 'b' },
+        { name: 'title', current: 'c', proposed: 'd' },
+      ] }],
+  });
+  assert.throws(() => parseProposal(text), /title.*\bx\b|\bx\b.*title/);
+});

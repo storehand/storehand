@@ -72,13 +72,20 @@ const FENCE_LINE = /^~{3,}$/;
  * so a shorter or longer run of `~` inside the value is ordinary content, not
  * a premature close. Returns [value, nextIndex].
  *
- * Residual, deliberately unfixed: this trusts the opening fence line itself,
- * not a recomputed one. A human who hand-shortens that exact line to a length
- * that collides with an all-tilde line already inside the value would still
- * get a silent early close — the fence escalation above only protects against
- * collisions the renderer itself could produce, not ones introduced by
- * editing the delimiter. Markdown's own code fences carry the identical edge
- * case; closing it needs escaping, which this format does not attempt.
+ * This can still close early: `fenceFor` only sees the value at render time,
+ * so it cannot react to a `~~~` divider (or a pasted snippet containing one)
+ * the shop owner later types straight into VOORSTEL — no tampering with the
+ * delimiter line required, just editing the text the preamble tells them to
+ * edit. `readBlock` alone cannot tell early-close-with-leftovers apart from a
+ * clean close, since both look identical from here: a value, then a matching
+ * fence line. What makes it detectable is what comes *after* — a real close
+ * is always followed by the next literal token the format expects (VOORSTEL
+ * after HUIDIG, a heading after VOORSTEL), while a false close leaves the
+ * rest of the value sitting where that token should be. HUIDIG gets this for
+ * free, because `readBlock`'s own next call demands the literal "VOORSTEL" —
+ * leftover content practically never matches that. VOORSTEL has no such
+ * built-in next call, so its caller checks explicitly for a boundary; see
+ * that check in `parseProposal`.
  */
 function readBlock(lines, start, label, where) {
   let i = start;
@@ -115,9 +122,10 @@ export function parseProposal(text) {
 
   const lines = text.split('\n');
   let product = null;
-  // Tracks every field name seen for the current product, independent of
-  // `product.fields` — a duplicate is a document error even when the first
-  // occurrence was emptied and so never made it into `fields`.
+  // Tracks every field's dedupe key seen for the current product (see
+  // `dedupeKey` below), independent of `product.fields` — a duplicate is a
+  // document error even when the first occurrence was emptied and so never
+  // made it into `fields`.
   let seenFields = null;
   // Tracks every handle and every product gid seen across the whole file. A
   // second block with the same handle, or a different handle pointing at the
@@ -160,11 +168,6 @@ export function parseProposal(text) {
       if (!FIELD_NAMES.includes(name)) {
         fail(`${where}: "${name}" is not a field StoreHand writes (${FIELD_NAMES.join(', ')})`);
       }
-      // Two blocks for the same field leave no unambiguous way to pick a winner.
-      if (seenFields.has(name)) {
-        fail(`${where}: "${name}" appears twice for product "${product.handle}"`);
-      }
-      seenFields.add(name);
 
       let mediaId;
       let cursor = i + 1;
@@ -176,8 +179,33 @@ export function parseProposal(text) {
         cursor += 1;
       }
 
+      // A product can carry up to ten photos, one alt proposal each, so
+      // image.alt is keyed by field name *and* media id — two different
+      // images are two different fields. Every other field name is unique
+      // per product, so the name alone is the key. Either way, two blocks
+      // for the same key leave no unambiguous way to pick a winner.
+      const dedupeKey = mediaId ? `${name}:${mediaId}` : name;
+      if (seenFields.has(dedupeKey)) {
+        const detail = mediaId ? ` for media "${mediaId}"` : '';
+        fail(`${where}: "${name}"${detail} appears twice for product "${product.handle}"`);
+      }
+      seenFields.add(dedupeKey);
+
       const [current, afterCurrent] = readBlock(lines, cursor, 'HUIDIG', where);
       const [proposed, afterProposed] = readBlock(lines, afterCurrent, 'VOORSTEL', where);
+
+      // A clean VOORSTEL close is always followed by blank lines and then the
+      // next heading, or the end of the file. Anything else means the fence
+      // closed somewhere the format does not allow — almost certainly because
+      // the value itself contains a line of only `~` that matched the opening
+      // fence, and the rest of the value fell out here as stray text that the
+      // main loop would otherwise silently step over.
+      let boundary = afterProposed;
+      while (boundary < lines.length && lines[boundary].trim() === '') boundary += 1;
+      if (boundary < lines.length && !/^(?:## |### )/.test(lines[boundary])) {
+        fail(`${where}: VOORSTEL closed somewhere the format does not allow — the value likely contains a line of tildes that was mistaken for the closing fence`);
+      }
+
       i = afterProposed;
 
       // An emptied VOORSTEL means "leave this field alone", never "blank it".
