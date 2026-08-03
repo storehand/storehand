@@ -128,6 +128,7 @@ without it, and a store connected with the five is the safer resting state.
 | `read_inventory` | Stock levels for low-stock alerts |
 | `read_discounts` | Discount codes and windows for the health check |
 | `read_online_store_navigation` | Menu links for the broken-link check |
+| `read_reports` | Not requested by StoreHand — Shopify's own CLI app adds it to every authorization. Listed here because the consent screen will show it |
 | `write_products` | **Optional, opt-in.** Only for `product-listing-writer`, and only to apply a proposal you have read and edited. Titles, descriptions, SEO fields and image alt text — not prices, not inventory, not orders |
 
 You approve these in your own browser, on Shopify's own screen. Skills that

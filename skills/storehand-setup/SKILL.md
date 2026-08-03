@@ -78,14 +78,45 @@ Explain before running:
 - The token is stored locally by the Shopify CLI in `~/.config/`, and it refreshes
   itself.
 
-**If no browser is available** (a server, a remote SSH session), use the device
-flow instead:
+**If no browser is available** (a server, a remote SSH session), the CLI still
+needs one — it has no device-code flow. Verified against CLI 4.5.2 on
+2026-08-03: `SHOPIFY_CLI_DEVICE_AUTH` is listed among the CLI's environment
+variable names but is read nowhere in its code, so setting it changes nothing
+and `shopify store auth` still fails with `spawn xdg-open ENOENT`.
+
+What works is borrowing the browser on another machine and tunnelling the
+callback back. Three steps, in this order:
+
+1. Give the headless box something to "open" with, so the URL is printed
+   instead of the command failing:
+
+   ```bash
+   printf '#!/bin/sh\nprintf "%%s\\n" "$1"\n' > /usr/local/bin/xdg-open
+   chmod +x /usr/local/bin/xdg-open
+   ```
+
+2. From the machine that *does* have a browser, open a tunnel and leave it
+   running. **Read the port out of the printed URL rather than assuming it** —
+   it is the `redirect_uri` parameter, and it is not the `3456` that appears as
+   a constant in the CLI's own source:
+
+   ```bash
+   ssh -L <port>:127.0.0.1:<port> <user>@<host>
+   ```
+
+3. Run `shopify store auth` on the headless box. It prints the authorization
+   URL. Open that URL in the browser on the other machine and approve. Shopify
+   redirects to `127.0.0.1:<port>`, the tunnel carries it back, and the CLI
+   stores the token.
+
+If the tunnel was not up in time, the browser shows a connection error but the
+authorization code is still in its address bar and the CLI is still listening.
+Deliver it by hand on the headless box — the code is single use, so do this
+once:
 
 ```bash
-SHOPIFY_CLI_DEVICE_AUTH=1 shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation
+curl "http://127.0.0.1:<port>/auth/callback?code=<code>&shop=<domain>&state=<state>"
 ```
-
-That prints a code and a URL to open on any other device.
 
 Note on order history: the `read_orders` scope covers roughly the last 60 days,
 which is more than a daily briefing needs. Longer history needs extra permission
