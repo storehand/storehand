@@ -61,12 +61,22 @@ export function planApply(proposal, liveData) {
       const liveValue = raw ?? '';
 
       if (liveValue !== field.current) {
-        // Report the raw fetched value, not the normalised one: a shop owner
-        // reading the skip list should see the `null` Shopify actually
-        // returned, not an empty string that quietly hides what happened.
+        // The live value drifted from what the proposal recorded — but there are
+        // two ways that happens, and calling both "changed in the admin" accuses
+        // the owner of an edit they did not make. When the live value is exactly
+        // what this proposal asked for, an earlier apply of this same file is
+        // the explanation, not a person. Both outcomes skip the field; only the
+        // words differ, and the words are what the owner acts on.
+        const alreadyApplied = liveValue === field.proposed;
         plan.skipped.push({
-          handle: product.handle, field: field.name, reason: 'changed-in-admin',
-          wasInProposal: field.current, isNow: raw,
+          handle: product.handle,
+          field: field.name,
+          reason: alreadyApplied ? 'already-applied' : 'changed-in-admin',
+          // Report the raw fetched value, not the normalised one: a shop owner
+          // reading the skip list should see the `null` Shopify actually
+          // returned, not an empty string that quietly hides what happened.
+          wasInProposal: field.current,
+          isNow: raw,
         });
         continue;
       }

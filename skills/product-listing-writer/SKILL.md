@@ -223,7 +223,12 @@ Read the JSON. Then show the user, before touching anything:
 - **apply** — per product, which fields and the new values, shortened to one
   line each.
 - **skipped** with `changed-in-admin` — name the field, what the proposal
-  recorded and what is there now. This is the mechanism working, not an error.
+  recorded and what is there now. This is the mechanism working, not an error:
+  somebody edited that field after the proposal was made.
+- **skipped** with `already-applied` — the field already carries exactly the
+  proposed text, so an earlier run of this same proposal wrote it. Say "already
+  done", never "changed in the admin": the owner did not touch it and should not
+  be told they did.
 - **skipped** with `media-gone` or `not-measured` — say which and why.
 - **unchanged** and **missing** — counts, and name the missing handles.
 
@@ -288,11 +293,12 @@ it may never have arrived. Nothing available to the session can tell which:
   flight when the call failed to return cleanly, and that they should check
   that one in the Shopify admin before doing anything else.
 - Say plainly what re-running apply afterwards will look like, because
-  otherwise it reads as a bug: if the write did land, Step 8's conflict check
-  will see the new value on the next run, find it differs from the proposal's
-  `HUIDIG` block, and skip that field as `changed-in-admin`. That is the
-  mechanism working correctly — it means "already done," not "conflict" — say
-  so in those words when it happens.
+  otherwise it reads as a bug: if the write did land, the next run finds the
+  live value already equal to the proposed text and skips that field as
+  `already-applied`. Nothing is written twice. If it did **not** land, the field
+  comes back as applicable and the re-run writes it. Either way the re-run is
+  safe — which is why the answer to an unknown outcome is to look, not to retry
+  blindly.
 
 Go product by product, and image by image within a product. Never batch: when
 one call fails you must still be able to say precisely where the run stopped.
@@ -302,9 +308,14 @@ one call fails you must still be able to say precisely where the run stopped.
 1. One line: how many products written, how many fields, how many skipped.
 2. Per written product, the fields that changed.
 3. The skipped list again, because it is what the owner needs to act on — a
-   `changed-in-admin` field is still waiting for a decision.
-4. Where the proposal file is, and that it was **not** modified: re-running
-   apply on the same file is safe and will report everything as `unchanged`.
+   `changed-in-admin` field is still waiting for a decision. Keep
+   `already-applied` separate from it: that one needs no decision at all, and
+   burying it in the same list makes a finished field look like a conflict.
+4. Where the proposal file is, and that it was **not** modified. Re-running
+   apply on the same file is safe: every field written by the first run comes
+   back as `already-applied` and nothing is written twice. It does **not** come
+   back as `unchanged` — that word is reserved for a field whose proposed text
+   was already the live value before any run touched it.
 
 Do not write `.storehand/state.json`. This skill keeps no memory between runs —
 the proposal file is the record.

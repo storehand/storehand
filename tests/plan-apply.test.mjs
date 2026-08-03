@@ -206,3 +206,32 @@ test('a liveData object with no products key at all reports every product as not
   assert.deepEqual(plan.missing, [{ handle: 'linnen-blazer', reason: 'product-not-found' }]);
   assert.equal(plan.apply.length, 0);
 });
+
+test('a field already carrying the proposed text is already-applied, not a phantom admin edit', () => {
+  const plan = planApply(
+    proposal([{ name: 'seo.description', current: '', proposed: 'Nieuwe tekst' }]),
+    live({ 'seo.description': 'Nieuwe tekst' }),
+  );
+  assert.equal(plan.apply.length, 0);
+  assert.deepEqual(plan.skipped, [{
+    handle: 'linnen-blazer', field: 'seo.description', reason: 'already-applied',
+    wasInProposal: '', isNow: 'Nieuwe tekst',
+  }]);
+});
+
+test('a live value that is neither the recorded one nor the proposed one is still changed-in-admin', () => {
+  const plan = planApply(
+    proposal([{ name: 'seo.description', current: '', proposed: 'Nieuwe tekst' }]),
+    live({ 'seo.description': 'Iets wat de eigenaar zelf typte' }),
+  );
+  assert.equal(plan.skipped[0].reason, 'changed-in-admin');
+});
+
+test('re-running the same proposal after a successful apply writes nothing', () => {
+  const p = proposal([{ name: 'title', current: 'Oud', proposed: 'Nieuw' }]);
+  const first = planApply(p, live({ title: 'Oud' }));
+  assert.equal(first.apply.length, 1);
+  const second = planApply(p, live({ title: 'Nieuw' }));
+  assert.equal(second.apply.length, 0);
+  assert.equal(second.skipped[0].reason, 'already-applied');
+});

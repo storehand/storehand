@@ -3,9 +3,10 @@
 Run against a live store on Admin API `2026-07`. Store anonymised throughout as
 `your-store.myshopify.com`; product ids replaced with `PRODUCT_ID`.
 
-The propose phase, the decision layer and the conflict check all ran end to end.
-The final approved write is not in this document — see "Still open" at the
-bottom.
+Both phases ran end to end, including one approved write and its verification.
+The write was reverted afterwards, so the store is as it was found. Six findings
+came out of the run; four were fixed on this branch, one confirmed a fix made
+earlier, and one is deliberately left open.
 
 ## The two unverified GraphQL shapes are settled
 
@@ -127,25 +128,57 @@ The consent screen listed `read_reports` alongside the six requested scopes —
 Shopify's own CLI app adds it to every authorization. The README claimed an
 exact scope list, so the claim was not quite true. Now noted in the scope table.
 
-## Still open — the last mile
+## The write, end to end
 
-The shop owner was asked for approval at Step 8 and **declined**. Nothing was
-written from the proposal, and the remaining product's `seo.description` is
-still empty. That is the gate behaving exactly as designed: the run stops at a
-no, and stops completely.
+The owner declined at the first approval gate, then approved a run whose only
+purpose was to prove Steps 9 and 10. It ran in full:
 
-What that leaves proven and unproven is worth being precise about, because the
-difference decides whether this skill may be called shipped:
+1. Live values re-fetched. `plan-apply.mjs` put one product in `apply` and kept
+   the edited one in `skipped`.
+2. `productUpdate` executed with the entry's `productInput` plus its `id`.
+   Response: `userErrors: []`, with the new value echoed back.
+3. Verified independently by re-querying the product rather than trusting the
+   mutation's own response.
+4. Reverted afterwards — the test store is left as it was found.
+
+### 5. Re-running a proposal accused the owner of an edit they never made (fixed)
+
+Step 10 claimed that re-running apply on the same file "will report everything
+as `unchanged`". Tested immediately after the successful write. It does not.
+
+The field now holds the proposed text, which differs from the `HUIDIG` block the
+proposal recorded — so it took the drift branch and came back as
+**`changed-in-admin`**. Nothing was written twice, so the run was safe. The
+report was not: it told the shop owner that somebody had edited that field in
+the admin, when StoreHand itself had written it one run earlier.
+
+Same failure as the parser message earlier in this branch — a report inventing a
+cause — and worse here, because it accuses a person.
+
+Fixed in `plan-apply.mjs` rather than in the prose: when the live value is
+exactly the proposed text, the skip reason is now `already-applied`. Both
+outcomes still skip the field; only the words differ, and the words are what the
+owner acts on. Confirmed against the live store: the written product now reports
+`already-applied` while the separately-edited one still reports
+`changed-in-admin`.
+
+### 6. Shopify stores an empty SEO field as `null`, not `""` (confirms an earlier fix)
+
+The revert wrote `""` to `seo.description`. Reading it back returns `null`.
+
+That is the exact case behind the `raw ?? ''` normalisation in `plan-apply.mjs`:
+a proposal records an empty field as `""`, the store hands back `null`, and a
+strict comparison would call every empty field a conflict. The fix was made on
+reasoning earlier in this branch; this run turned it into a measurement.
+
+## Still open — nothing
+
+Every step of both phases has now run against a live store, and the evidence is
+above. `product-listing-writer` meets the repository's bar for shipped.
 
 | | |
 |---|---|
-| The mutation reaches the store and reports honestly | **Proven** — `productUpdate` wrote a real field and returned `userErrors: []` |
-| Propose → edit → decide → conflict check | **Proven** end to end against live data |
-| Step 9 executing an approved plan, and Step 10 reporting it | **Not run** |
-
-So the mechanism is verified and the final hand-off is not. Until a run gets a
-yes and Step 9 writes from `plan.apply`, `product-listing-writer` stays
-**"Designed, in build"** in the README. The repository's own rule — a skill is
-only listed as shipped once it has run against a live store with the evidence
-here — is not satisfied by a run that stopped at the gate, however correctly it
-stopped.
+| Both unverified GraphQL shapes | Settled against `2026-07` |
+| Propose → edit → decide → conflict check | Proven |
+| Step 9 writing an approved plan, Step 10 reporting it | Proven |
+| Store left as found | Yes — the one test write was reverted |
