@@ -34,6 +34,12 @@ const ALLOWED_HOSTS = new Set([
   'www.getstorehand.com',
   'github.com',
   'docs.github.com',
+  // GitHub's asset host: the only way a README image renders both on GitHub
+  // and on npm, where relative paths into `assets/` are not shipped.
+  'raw.githubusercontent.com',
+  // Required by every SVG file ever written — it is the namespace declaration,
+  // not a link to anywhere. Without this, adding any artwork trips the scan.
+  'www.w3.org',
   'shopify.com',
   'shopify.dev',
   'help.shopify.com',
