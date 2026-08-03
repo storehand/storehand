@@ -220,3 +220,25 @@ test('a duplicate is refused even when the first occurrence was emptied and neve
   });
   assert.throws(() => parseProposal(text), /title.*\bx\b|\bx\b.*title/);
 });
+
+test('a duplicated product heading (same handle twice) is refused, naming the handle', () => {
+  const text = renderProposal({
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [
+      { handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID', fields: [{ name: 'title', current: 'a', proposed: 'b' }] },
+      { handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID_2', fields: [{ name: 'title', current: 'c', proposed: 'd' }] },
+    ],
+  });
+  assert.throws(() => parseProposal(text), /\bx\b/);
+});
+
+test('two different handles pointing at the same product gid are refused, naming the gid', () => {
+  const text = renderProposal({
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [
+      { handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID', fields: [{ name: 'title', current: 'a', proposed: 'b' }] },
+      { handle: 'y', id: 'gid://shopify/Product/PRODUCT_ID', fields: [{ name: 'title', current: 'c', proposed: 'd' }] },
+    ],
+  });
+  assert.throws(() => parseProposal(text), /PRODUCT_ID/);
+});

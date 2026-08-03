@@ -71,6 +71,14 @@ const FENCE_LINE = /^~{3,}$/;
  * fence's exact length is what closes the block — never the constant FENCE —
  * so a shorter or longer run of `~` inside the value is ordinary content, not
  * a premature close. Returns [value, nextIndex].
+ *
+ * Residual, deliberately unfixed: this trusts the opening fence line itself,
+ * not a recomputed one. A human who hand-shortens that exact line to a length
+ * that collides with an all-tilde line already inside the value would still
+ * get a silent early close — the fence escalation above only protects against
+ * collisions the renderer itself could produce, not ones introduced by
+ * editing the delimiter. Markdown's own code fences carry the identical edge
+ * case; closing it needs escaping, which this format does not attempt.
  */
 function readBlock(lines, start, label, where) {
   let i = start;
@@ -111,6 +119,13 @@ export function parseProposal(text) {
   // `product.fields` — a duplicate is a document error even when the first
   // occurrence was emptied and so never made it into `fields`.
   let seenFields = null;
+  // Tracks every handle and every product gid seen across the whole file. A
+  // second block with the same handle, or a different handle pointing at the
+  // same gid, is the same "no way to pick a winner" problem as a duplicate
+  // field — just one level up, and worse, because it becomes two conflicting
+  // writes to one store object.
+  const seenHandles = new Set();
+  const seenProductIds = new Set();
   let i = 0;
 
   while (i < lines.length) {
@@ -121,7 +136,16 @@ export function parseProposal(text) {
       const handle = isProduct[1].trim();
       const gid = lines.slice(i + 1, i + 4).join('\n').match(/<!-- product: (\S+) -->/);
       if (!gid) fail(`product "${handle}": no product gid comment under the heading`);
-      product = { handle, id: gid[1], fields: [] };
+      const productId = gid[1];
+      if (seenHandles.has(handle)) {
+        fail(`product "${handle}": this handle appears twice in the file`);
+      }
+      if (seenProductIds.has(productId)) {
+        fail(`product "${handle}": its gid ${productId} already appears under a different heading`);
+      }
+      seenHandles.add(handle);
+      seenProductIds.add(productId);
+      product = { handle, id: productId, fields: [] };
       seenFields = new Set();
       parsed.products.push(product);
       i += 1;
