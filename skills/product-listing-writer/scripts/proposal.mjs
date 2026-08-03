@@ -195,15 +195,34 @@ export function parseProposal(text) {
       const [proposed, afterProposed] = readBlock(lines, afterCurrent, 'VOORSTEL', where);
 
       // A clean VOORSTEL close is always followed by blank lines and then the
-      // next heading, or the end of the file. Anything else means the fence
-      // closed somewhere the format does not allow — almost certainly because
-      // the value itself contains a line of only `~` that matched the opening
-      // fence, and the rest of the value fell out here as stray text that the
-      // main loop would otherwise silently step over.
+      // next heading, or the end of the file. Anything else means the block
+      // ended where the format does not allow, and the stray text would
+      // otherwise be stepped over in silence by the main loop.
+      //
+      // Two different edits land here, so the message names what was actually
+      // found rather than guessing: a line of only `~` matched the opening
+      // fence and cut the value in half, or the file simply has content in a
+      // place with no meaning. Reporting the first cause for the second sends
+      // someone hunting for a tilde that is not there.
       let boundary = afterProposed;
       while (boundary < lines.length && lines[boundary].trim() === '') boundary += 1;
       if (boundary < lines.length && !/^(?:## |### )/.test(lines[boundary])) {
-        fail(`${where}: VOORSTEL closed somewhere the format does not allow — the value likely contains a line of tildes that was mistaken for the closing fence`);
+        // The stray region runs to the next heading or the end of the file. A
+        // leftover fence line inside it is what an early close leaves behind:
+        // the real closing fence never got consumed, because a tilde line
+        // earlier in the value was taken for it.
+        let end = boundary;
+        while (end < lines.length && !/^(?:## |### )/.test(lines[end])) end += 1;
+        const strayLines = lines.slice(boundary, end);
+        const cutInHalf = strayLines.some((line) => /^~{3,}$/.test(line.trim()));
+
+        const first = strayLines.find((line) => line.trim() !== '')?.trim() ?? '';
+        const quoted = first.length > 40 ? `${first.slice(0, 40)}…` : first;
+        fail(
+          cutInHalf
+            ? `${where}: the VOORSTEL value contains a line of only tildes, which closed the block early and cut the value in half — lengthen that line or remove it`
+            : `${where}: unexpected text after the VOORSTEL block ("${quoted}") — the format has no meaning for it, so StoreHand cannot tell whether it belongs to the value or is a stray note`,
+        );
       }
 
       i = afterProposed;

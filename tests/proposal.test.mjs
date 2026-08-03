@@ -393,3 +393,32 @@ test('a duplicated non-alt field is still refused, as before', () => {
   });
   assert.throws(() => parseProposal(text), /title.*\bx\b|\bx\b.*title/);
 });
+
+test('a refused value cut in half by a tilde line says so, and says nothing else', () => {
+  const source = {
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [{ name: 'description', current: '', proposed: '<p>Eerste deel</p>' }] }],
+  };
+  const edited = renderProposal(source)
+    .replace('<p>Eerste deel</p>', '<p>Eerste deel</p>\n~~~\n<p>Tweede deel</p>');
+  assert.throws(() => parseProposal(edited), /line of only tildes/);
+});
+
+test('a stray note between two fields is refused without blaming tildes that are not there', () => {
+  const source = {
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID', fields: [
+      { name: 'title', current: 'a', proposed: 'b' },
+      { name: 'description', current: 'c', proposed: 'd' },
+    ] }],
+  };
+  const edited = renderProposal(source)
+    .replace('\n### description', '\n(nog even nakijken met marketing)\n\n### description');
+  assert.throws(() => parseProposal(edited), (error) => {
+    assert.match(error.message, /unexpected text after the VOORSTEL block/);
+    assert.match(error.message, /nog even nakijken met marketing/);
+    assert.doesNotMatch(error.message, /tilde/);
+    return true;
+  });
+});
