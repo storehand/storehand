@@ -112,9 +112,25 @@ The consent screen listed `read_reports` alongside the six requested scopes —
 Shopify's own CLI app adds it to every authorization. The README claimed an
 exact scope list, so the claim was not quite true. Now noted in the scope table.
 
-## Still open
+## Still open — the last mile
 
-The approved write itself. The decision output above is the state at the
-approval gate; the `productUpdate` for the remaining product waits on an
-explicit yes from the shop owner, per Step 8. Nothing was written from the
-proposal.
+The shop owner was asked for approval at Step 8 and **declined**. Nothing was
+written from the proposal, and the remaining product's `seo.description` is
+still empty. That is the gate behaving exactly as designed: the run stops at a
+no, and stops completely.
+
+What that leaves proven and unproven is worth being precise about, because the
+difference decides whether this skill may be called shipped:
+
+| | |
+|---|---|
+| The mutation reaches the store and reports honestly | **Proven** — `productUpdate` wrote a real field and returned `userErrors: []` |
+| Propose → edit → decide → conflict check | **Proven** end to end against live data |
+| Step 9 executing an approved plan, and Step 10 reporting it | **Not run** |
+
+So the mechanism is verified and the final hand-off is not. Until a run gets a
+yes and Step 9 writes from `plan.apply`, `product-listing-writer` stays
+**"Designed, in build"** in the README. The repository's own rule — a skill is
+only listed as shipped once it has run against a live store with the evidence
+here — is not satisfied by a run that stopped at the gate, however correctly it
+stopped.
