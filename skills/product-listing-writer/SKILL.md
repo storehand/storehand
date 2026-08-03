@@ -113,7 +113,7 @@ For each product, write a proposal for **only** the fields that need one:
 
 | Field | Write one when |
 |---|---|
-| `title` | The current title is a bare SKU, a duplicate, or says nothing a buyer searches for. A good title is rarely worth touching — say so and leave it |
+| `title` | The current title reads like a stock code rather than a name, is identical to another title **in this selection**, or says nothing a buyer would search for. Judge only what the query returned: no query fetches variant SKUs, and you have not seen the rest of the catalogue, so never claim a title "is the SKU" or "is a duplicate" as fact. A good title is rarely worth touching — say so and leave it |
 | `description` | The description is empty, or is spec-dump prose with no reason to buy. Output HTML, because the field is `descriptionHtml` |
 | `seo.title` | Empty, or a copy of the product title beyond ~60 characters |
 | `seo.description` | Empty, or over ~155 characters, or it repeats the title |
