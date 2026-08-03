@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="https://raw.githubusercontent.com/storehand/storehand/main/assets/storehand-mark-128.png" alt="" width="96" height="96" />
+</p>
+
 # StoreHand — Claude skills for Shopify
 
 **An extra pair of hands for your store.**
