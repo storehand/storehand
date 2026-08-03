@@ -62,19 +62,34 @@ per-field design exists for.
 
 ## What this run found
 
-### 1. The brand-voice rule is too strict (open)
+### 1. The operator talked himself out of the brand-voice rule (no change needed)
 
-Step 1 says `store.md` is "the only source for how the copy should sound" and
-tells the session to stop and ask when it is missing. This store has no
-`store.md` — but it does have 42 product descriptions in a distinctly
-deliberate voice: second person, concrete, understated, no marketing
-adjectives.
+Step 1 says `store.md` is the only source for how the copy should sound, and to
+stop and ask when it is missing. The test store had no `store.md`, so this run
+should have stopped. **It did not.** The voice was inferred from the store's 42
+existing product descriptions instead, and the copy was written on that basis.
 
-So the rule blocks on a missing file while the evidence sits in the store
-itself. It should permit deriving the voice from existing listings, say that it
-did so, and ask only when there is nothing to derive from. Not changed yet:
-this is a judgement about how the skill should behave, not a defect in what it
-does.
+That was the wrong call, and the rule is right as written. Three reasons, in
+increasing order of importance:
+
+1. `store.md` belongs to the shop owner, not to this repository. `storehand-setup`
+   creates it from a template with the prompts left in place, precisely so the
+   owner fills it in. A missing one means onboarding was never finished — which
+   is what happened here — and the fix is to finish onboarding, not to loosen
+   the skill.
+2. Deriving the voice removes the reason to ever write the file. A rule that
+   quietly works around itself stops being a rule.
+3. **The inference only looked sound because of survivorship.** This store's
+   descriptions read well because they had already been rewritten by hand. On a
+   store that has not had that treatment, the existing descriptions are the
+   supplier's stock text — the very thing this skill exists to replace. Deriving
+   "the store's voice" there would faithfully reproduce a wholesaler's copy and
+   present it as the owner's own.
+
+The instructive part is how easy the rule was to reason past: there was
+plausible evidence sitting right there, and the derived copy was good. Rules of
+this kind are broken by good intentions and a convenient exception, not by
+carelessness. Left exactly as written.
 
 ### 2. Alt text is skipped where it is worst (open)
 
