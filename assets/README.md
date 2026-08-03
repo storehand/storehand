@@ -1,14 +1,23 @@
 # Brand assets
 
-| File | Use |
+## `storehand-logo.png` — placeholder, meant to be replaced
+
+The README points at this one file. Drop your own artwork here under the same
+name and the header updates everywhere it is used; nothing else needs editing.
+
+What the file has to survive:
+
+| | |
 |---|---|
-| `storehand-mark.svg` · `storehand-mark-240.png` · `storehand-mark-128.png` | The mark. Black on white — READMEs, docs, light backgrounds |
-| `storehand-badge.svg` · `storehand-badge-240.png` | The mark knocked out of a black rounded square. Avatars, app tiles, and anywhere a plain white image would vanish into a white card |
+| Size | 240 × 240, square |
+| Format | PNG, transparent or white background |
+| Weight | Under 2 MB (Product Hunt's limit; ours is far below it) |
+| Legibility | It ends up at 24 px as a favicon and around 96 px in the README. Test it small before deciding — fine detail and any lettering disappear first |
 
-An open hand, because that is what the name says: an extra pair of hands for
-your store. Drawn from scratch — it borrows no other company's identity, and it
-is not meant to resemble one. StoreHand is not affiliated with Shopify Inc.
+Keep it monochrome. The rest of this project is black on white, the terminal it
+runs in is monochrome, and a mark that needs colour to work is a mark that
+breaks in half the places it lands.
 
-Both files are plain geometry with no text, so they survive being scaled to a
-24px favicon. Keep them monochrome; the whole point is that they read at any
-size, on anything.
+The README references the file through an absolute `raw.githubusercontent.com`
+URL rather than a relative path, because `assets/` is not shipped in the npm
+tarball — a relative link renders on GitHub but breaks on the npm package page.
