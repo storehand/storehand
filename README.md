@@ -55,33 +55,43 @@ version below is the one to wait for.
 | `storehand-setup` | Builds your store profile and connects the store | No — local files only |
 | `daily-store-briefing` | Morning briefing: new orders, failed payments, cancellations, refunds, low-stock alerts | No — local files only |
 | `store-health-check` | Weekly Shopify store audit: sold-out-but-active products, discount windows, broken storefront links, missing SEO metadata | No — local files only |
+| `product-listing-writer` | Product titles, descriptions, SEO fields and image alt text in your own voice — proposed in a file you edit, applied only on a separate command | Yes — only what you approved, and only with `write_products` |
 
-None of the three writes anything to your store. "Local files only" means
+The first three write nothing to your store. "Local files only" means
 `.storehand/` in your own directory — the profile, a timestamp so tomorrow's
 briefing knows where to start, and the health check's memory of what it found
 last time.
 
+`product-listing-writer` is the one that can change something, and it is built
+so that it cannot surprise you. It proposes into a file, you read and edit that
+file, and applying it writes only the fields you left in it. Any field somebody
+changed in the Shopify admin in the meantime is skipped and reported, never
+overwritten. Without the `write_products` scope it still works — it produces the
+proposal and stops at the point of writing.
+
 ## Roadmap
 
-Six skills make up version 1. Three are shipped and running against a real shop;
-three are not written yet. A skill is only listed as shipped once it has been
+Six skills make up version 1. Four are shipped and running against a real shop;
+two are not written yet. A skill is only listed as shipped once it has been
 run against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 
 | # | Skill | What it will do | Status |
 |---|---|---|---|
 | 1 | `daily-store-briefing` | Orders, payments, cancellations, stock | **Shipped** |
 | 2 | `store-health-check` | Weekly store audit, broken links, discount and metadata gaps | **Shipped** |
-| 3 | `product-listing-writer` | Product titles, descriptions, SEO fields and alt text in your brand voice — proposed in a file you edit, applied only on a separate command | Designed, in build |
+| 3 | `product-listing-writer` | Product titles, descriptions, SEO fields and alt text in your brand voice — proposed in a file you edit, applied only on a separate command | **Shipped** |
 | 4 | `price-and-competitor-watch` | Follows a fixed list of competitor product pages and reports the gap against your margin rules | Planned |
 | 5 | `seo-metadata-audit` | Sweeps the whole catalogue for titles, meta descriptions and alt text that lag behind, and prepares the fixes | Planned |
 | 6 | `weekly-store-report` | Revenue, conversion and returning customers, with concrete actions | Planned |
 
-Skill 3 is the first one that will write to a store, and it changes the rules
-above: it needs `write_products`, and it works in two steps. First a proposal
-file listing the current and the suggested text for every field, which you can
-read and edit. Then a separate command that applies exactly what you left in
-that file — and skips anything you changed in the admin in the meantime rather
-than overwriting your work.
+Skill 3 is the only one that writes to a store, and it changes the rules above:
+it needs `write_products`, and it works in two steps. First a proposal file
+listing the current and the suggested text for every field, which you read and
+edit. Then a separate command that applies exactly what you left in that file —
+and skips anything you changed in the admin in the meantime rather than
+overwriting your work. That skip is not a nicety: it was tested against a live
+store before this was called shipped, and the run is written up in
+[`docs/dogfood/`](docs/dogfood/).
 
 Everything else stays read-only.
 
