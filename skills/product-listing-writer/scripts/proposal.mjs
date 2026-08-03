@@ -10,8 +10,25 @@ const PREAMBLE = `Edit the text inside the VOORSTEL blocks. Delete a \`###\` fie
 that field alone. Do not touch the HUIDIG blocks — they are what protects your
 admin edits.`;
 
+/*
+ * Markdown's own rule: a longer fence wins. A value line that is itself a run
+ * of only `~` characters would otherwise be indistinguishable from the block's
+ * closing fence — the parser would stop early and silently truncate the rest
+ * of the value. So the fence is chosen per block: longer than any all-tilde
+ * line the value contains, never shorter than FENCE.
+ */
+function fenceFor(value) {
+  let longestRun = 0;
+  for (const line of value === '' ? [] : value.split('\n')) {
+    const trimmed = line.trim();
+    if (/^~+$/.test(trimmed)) longestRun = Math.max(longestRun, trimmed.length);
+  }
+  return '~'.repeat(Math.max(FENCE.length, longestRun + 1));
+}
+
 function block(label, value) {
-  return `${label}\n${FENCE}\n${value === '' ? '' : `${value}\n`}${FENCE}`;
+  const fence = fenceFor(value);
+  return `${label}\n${fence}\n${value === '' ? '' : `${value}\n`}${fence}`;
 }
 
 function renderField(field) {
@@ -47,20 +64,30 @@ function fail(message) {
   throw new ProposalError(`proposal file: ${message}`);
 }
 
-/** Reads a `LABEL` line followed by a ~~~ fence. Returns [value, nextIndex]. */
+const FENCE_LINE = /^~{3,}$/;
+
+/**
+ * Reads a `LABEL` line followed by a fence of three or more `~`. The opening
+ * fence's exact length is what closes the block — never the constant FENCE —
+ * so a shorter or longer run of `~` inside the value is ordinary content, not
+ * a premature close. Returns [value, nextIndex].
+ */
 function readBlock(lines, start, label, where) {
   let i = start;
   while (i < lines.length && lines[i].trim() === '') i += 1;
   if (lines[i]?.trim() !== label) fail(`${where}: expected a ${label} block`);
   i += 1;
-  if (lines[i]?.trim() !== FENCE) fail(`${where}: ${label} is not followed by a ${FENCE} fence`);
+  const openFence = lines[i]?.trim();
+  if (!openFence || !FENCE_LINE.test(openFence)) {
+    fail(`${where}: ${label} is not followed by a fence of three or more ~`);
+  }
   i += 1;
   const value = [];
-  while (i < lines.length && lines[i].trim() !== FENCE) {
+  while (i < lines.length && lines[i].trim() !== openFence) {
     value.push(lines[i]);
     i += 1;
   }
-  if (i >= lines.length) fail(`${where}: unterminated ${label} block — no closing ${FENCE}`);
+  if (i >= lines.length) fail(`${where}: unterminated ${label} block — no closing ${openFence}`);
   return [value.join('\n'), i + 1];
 }
 
@@ -80,6 +107,10 @@ export function parseProposal(text) {
 
   const lines = text.split('\n');
   let product = null;
+  // Tracks every field name seen for the current product, independent of
+  // `product.fields` — a duplicate is a document error even when the first
+  // occurrence was emptied and so never made it into `fields`.
+  let seenFields = null;
   let i = 0;
 
   while (i < lines.length) {
@@ -91,6 +122,7 @@ export function parseProposal(text) {
       const gid = lines.slice(i + 1, i + 4).join('\n').match(/<!-- product: (\S+) -->/);
       if (!gid) fail(`product "${handle}": no product gid comment under the heading`);
       product = { handle, id: gid[1], fields: [] };
+      seenFields = new Set();
       parsed.products.push(product);
       i += 1;
       continue;
@@ -104,6 +136,11 @@ export function parseProposal(text) {
       if (!FIELD_NAMES.includes(name)) {
         fail(`${where}: "${name}" is not a field StoreHand writes (${FIELD_NAMES.join(', ')})`);
       }
+      // Two blocks for the same field leave no unambiguous way to pick a winner.
+      if (seenFields.has(name)) {
+        fail(`${where}: "${name}" appears twice for product "${product.handle}"`);
+      }
+      seenFields.add(name);
 
       let mediaId;
       let cursor = i + 1;

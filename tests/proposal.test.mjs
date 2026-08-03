@@ -154,3 +154,69 @@ test('image.alt without a media gid is refused', () => {
   }).replace('<!-- media: gid://shopify/MediaImage/MEDIA_ID -->\n\n', '');
   assert.throws(() => parseProposal(text), /media/i);
 });
+
+test('a value containing a line that is exactly `~~~` survives the round trip intact', () => {
+  const source = {
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [{ name: 'description', current: '', proposed: '<p>een</p>\n~~~\n<p>twee</p>' }] }],
+  };
+  const back = parseProposal(renderProposal(source));
+  assert.equal(back.products[0].fields[0].proposed, '<p>een</p>\n~~~\n<p>twee</p>');
+});
+
+test('a value containing a line of `~~~~~` survives the round trip intact', () => {
+  const source = {
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [{ name: 'description', current: '', proposed: '<p>een</p>\n~~~~~\n<p>twee</p>' }] }],
+  };
+  const back = parseProposal(renderProposal(source));
+  assert.equal(back.products[0].fields[0].proposed, '<p>een</p>\n~~~~~\n<p>twee</p>');
+});
+
+test('an inline run of ~~~ in the middle of a sentence does not escalate the fence', () => {
+  const source = {
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [{ name: 'description', current: '', proposed: 'Use ~~~ inline like this.' }] }],
+  };
+  const text = renderProposal(source);
+  assert.match(text, /VOORSTEL\n~~~\nUse ~~~ inline like this\.\n~~~/);
+  const back = parseProposal(text);
+  assert.equal(back.products[0].fields[0].proposed, 'Use ~~~ inline like this.');
+});
+
+test('an ordinary value renders with the plain three-tilde fence, no gratuitous escalation', () => {
+  const text = renderProposal({
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [{ name: 'title', current: 'a', proposed: 'b' }] }],
+  });
+  assert.match(text, /HUIDIG\n~~~\na\n~~~/);
+  assert.match(text, /VOORSTEL\n~~~\nb\n~~~/);
+});
+
+test('a duplicated field block under one product is refused, naming the handle and the field', () => {
+  const text = renderProposal({
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [
+        { name: 'title', current: 'a', proposed: 'b' },
+        { name: 'title', current: 'c', proposed: 'd' },
+      ] }],
+  });
+  assert.throws(() => parseProposal(text), /title.*\bx\b|\bx\b.*title/);
+});
+
+test('a duplicate is refused even when the first occurrence was emptied and never applied', () => {
+  const text = renderProposal({
+    store: 'your-store.myshopify.com', createdAt: 't', apiVersion: 'v',
+    products: [{ handle: 'x', id: 'gid://shopify/Product/PRODUCT_ID',
+      fields: [
+        { name: 'title', current: 'a', proposed: '' },
+        { name: 'title', current: 'a', proposed: 'b' },
+      ] }],
+  });
+  assert.throws(() => parseProposal(text), /title.*\bx\b|\bx\b.*title/);
+});
