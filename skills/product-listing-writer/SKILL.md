@@ -248,7 +248,13 @@ shopify store execute --store <store> --json --allow-mutations \
 
 The `product` variable is the entry's `productInput` with `"id"` added.
 
-Per product with a non-empty `files`, one call for all of its images:
+Per product with a non-empty `files`, **one call per image** — never batch
+several images into a single `fileUpdate` call, even though the mutation's
+`files` argument accepts a list. Shopify can apply some entries in a batch and
+reject others in the same response, which turns "did this one alt text land"
+into a reconciliation problem across every id you sent. One call per image
+keeps that question single-valued: this call either wrote this image's alt
+text or it did not.
 
 ```bash
 printf '%s' '{"files":[{"id":"gid://shopify/MediaImage/MEDIA_ID","alt":"…"}]}' > "$V/f.json"
@@ -257,13 +263,39 @@ shopify store execute --store <store> --json --allow-mutations \
   --variable-file "$V/f.json"
 ```
 
-**Read `userErrors` on every response.** A mutation that returns HTTP 200 with a
-populated `userErrors` array wrote nothing. Treat it as a failure for that
-product, report it, and keep going with the rest — then say at the end exactly
-which products succeeded and which did not.
+(`files` still takes a list in the mutation's shape — send exactly one entry.)
 
-Go product by product. Never batch across products: when one fails you must
-still be able to say precisely where the run stopped.
+**Read `userErrors` on every response.** A mutation that returns HTTP 200 with a
+populated `userErrors` array wrote nothing. Treat it as a failure for that one
+call — that product for `productUpdate`, that single image for `fileUpdate`.
+Report it and keep going with the rest, then say at the end exactly which
+products and which images succeeded and which did not. Never report "images
+updated" for a product as one yes or no when the calls underneath it are per
+image; name each one.
+
+**A call that does not come back clean is a third outcome, not a second one.**
+`shopify store execute` exiting non-zero, timing out, or printing output that
+does not parse is neither "wrote" nor "did not write" — it is **unknown**. The
+request may have reached Shopify and applied before the response was lost, or
+it may never have arrived. Nothing available to the session can tell which:
+
+- **Do not retry.** Retrying an unknown write is how the same change gets
+  applied twice.
+- **Stop the run right there.** Do not continue to the next product or the
+  next image — once one outcome is unknown, a report covering the rest cannot
+  honestly describe the state of the store.
+- Tell the owner exactly which product and which field (or which image) was in
+  flight when the call failed to return cleanly, and that they should check
+  that one in the Shopify admin before doing anything else.
+- Say plainly what re-running apply afterwards will look like, because
+  otherwise it reads as a bug: if the write did land, Step 8's conflict check
+  will see the new value on the next run, find it differs from the proposal's
+  `HUIDIG` block, and skip that field as `changed-in-admin`. That is the
+  mechanism working correctly — it means "already done," not "conflict" — say
+  so in those words when it happens.
+
+Go product by product, and image by image within a product. Never batch: when
+one call fails you must still be able to say precisely where the run stopped.
 
 ## Step 10 — Report
 
@@ -287,7 +319,8 @@ the proposal file is the record.
 | The parser refuses the proposal | Show the message literally, stop, change nothing |
 | `store` in the proposal ≠ `store.yaml` | Stop — this proposal belongs to another store |
 | Re-fetch fails for any product | Stop before writing anything |
-| `userErrors` non-empty | That product was not written. Report it and continue with the rest |
+| `userErrors` non-empty | That product — or that one image, for `fileUpdate` — was not written. Report it and continue with the rest |
+| A mutation call exits non-zero, times out, or its output does not parse | **Unknown, not failed.** Stop the run immediately. Name the exact product and field (or image) in flight, and tell the owner to check it in the Shopify admin before doing anything else. Never retry |
 | A field does not exist (API version drift) | Show the error, name the query file, point at `$CLAUDE_PLUGIN_ROOT/shared/api-version.md` |
 | `$CLAUDE_PLUGIN_ROOT` is empty | Stop; never guess where plugin files are |
 
