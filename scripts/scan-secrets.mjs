@@ -40,6 +40,8 @@ const ALLOWED_HOSTS = new Set([
   // Required by every SVG file ever written — it is the namespace declaration,
   // not a link to anywhere. Without this, adding any artwork trips the scan.
   'www.w3.org',
+  // Badge images in the README. A static badge CDN, never a store domain.
+  'img.shields.io',
   'shopify.com',
   'shopify.dev',
   'help.shopify.com',
