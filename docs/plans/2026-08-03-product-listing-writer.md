@@ -27,6 +27,21 @@ Shopify Admin GraphQL via `shopify store execute`, API version read from
 | Conflict detection | Per field: proposal `HUIDIG` vs live value at apply time |
 | Fields covered | `title`, `description`, `seo.title`, `seo.description`, `image.alt` |
 
+**Which gate to run when.** `scripts/validate-plugin.mjs` requires a `SKILL.md`
+in every directory under `skills/`, and this skill's `SKILL.md` cannot land
+before Task 5 — it references the query files Task 4 creates, and the validator
+resolves those paths. So:
+
+| Tasks | Gate before committing |
+|---|---|
+| 1–4 | `npm run scan && npm test` |
+| 5–9 | `npm run check` (scan + tests + validate) |
+
+Between Tasks 1 and 4 a bare `npm run check` reports
+`skills/product-listing-writer: missing SKILL.md`. That is the plan working, not
+a defect. Do **not** add a placeholder `SKILL.md` to silence it — Task 5 writes
+the real one.
+
 ---
 
 ## File Structure
