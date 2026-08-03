@@ -79,11 +79,24 @@ Progress lines and the CLI's error box both go to stderr while stdout stays
 empty on failure. `2>/dev/null` therefore hides errors, not noise. Check the
 exit code, and treat empty stdout as a failed call, never as "no products".
 
-**Re-check what came back.** Per `shared/safety.md`, the Admin API silently
-ignores search terms it does not recognise: a misspelled handle returns the
-whole catalogue. Drop every returned product whose `handle` is not one you
-asked for, and if any asked-for handle is missing from the result, name it —
-do not quietly write copy for 40 products when the user named 2.
+**Re-check what came back — the check differs by path.** Per `shared/safety.md`,
+the Admin API silently ignores search terms it does not recognise, and a bad
+filter can hand back the whole catalogue with no error. Each path fails
+differently, so check accordingly:
+
+- **Named handles** — drop every returned product whose `handle` is not one
+  you asked for, and if any asked-for handle is missing from the result, name
+  it. Do not quietly write copy for 40 products when the user named 2.
+- **Tag** — drop every returned product whose `tags` do not contain the tag
+  you queried for. If *any* product fails that check, say so plainly in the
+  report: it means the filter did not work, and the result may also be
+  missing products that were never returned at all.
+- **Collection** — a different failure mode, and it fails loudly instead of
+  silently: `collectionByHandle` returns `null` for a handle that does not
+  exist, rather than silently widening to the whole catalogue. Membership in
+  a collection is not a search filter, so there is nothing to re-verify per
+  product — but a `null` collection must stop the run with a clear message
+  naming the handle, never be treated as "no products found".
 
 If `pageInfo.hasNextPage` is true, say the selection was truncated and stop
 rather than proposing a partial set. Do not paginate.

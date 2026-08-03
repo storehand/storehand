@@ -7,6 +7,7 @@ query ProductsByTag($query: String!, $first: Int!) {
       title
       description
       descriptionHtml
+      tags
       seo { title description }
       media(first: 10) {
         pageInfo { hasNextPage }
