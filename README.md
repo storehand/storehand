@@ -28,20 +28,20 @@ of it — new orders, payments that failed, stock running out. Four open-source
 skills for Claude Code. **Read-only by default**, no telemetry, no account,
 nothing running on someone else's server.
 
-```
-You: how did the store do overnight?
+Ask *"how did the store do overnight?"* and this is what comes back:
 
-StoreHand: 3 new orders (€412) · 1 failed payment · 2 variants low
-           · no cancellations
+<img src="https://raw.githubusercontent.com/storehand/storehand/refs/heads/main/assets/demo-briefing-report.png" alt="A StoreHand briefing: 4 new orders, €412 collected, 1 expired payment of €89, 1 partial refund of €24, 5 variants low, no cancellations. It names the expired order and the customer, lists the two unfulfilled orders, tables the five low-stock variants, and suggests three actions. It closes by noting the low-stock filter also returned a variant holding 12 units, which it dropped." />
 
-  Needs attention
-  - #1042 payment expired (€89) — customer may retry or need a new invoice
-  - "Linen blazer / M" is down to 2, "Wool coat / L" to 1
+Note the last paragraph. The stock filter handed back a variant holding twelve
+units against a threshold of five — Shopify's search index lagging behind the
+data — and the briefing dropped it and said so. **Every number in a StoreHand
+report is checked against the thing it claims to measure before you read it.**
 
-  Suggested
-  - Send #1042 a fresh payment link
-  - Reorder the blazer before the weekend
-```
+<sub>Every screenshot on this page is a real run of the shipped skills, captured
+from the terminal — not a mock-up, and nothing in them retyped by hand. The shop
+underneath is invented: it has no Shopify account, and its products, orders and
+customer names were written for the demo. The skills, the queries, the re-checks
+and the storefront requests are the ones this repository ships.</sub>
 
 ## Install
 
@@ -93,6 +93,16 @@ Every skill has run against a live store before being called shipped, and the
 run is written up in [`docs/dogfood/`](docs/dogfood/) — the commands, the real
 output, and what was awkward about it. The repository carries 121 tests.
 
+The weekly check is the one that finds things nobody is looking for. It fetches
+your storefront over HTTP rather than trusting the admin, so a link that exists
+in Shopify and 404s for customers shows up as what it is:
+
+<img src="https://raw.githubusercontent.com/storehand/storehand/refs/heads/main/assets/demo-health-report.png" alt="A StoreHand health check: 2 products sold out but active, 1 broken link, 4 discount issues, 10 metadata gaps. It names the two sold-out products, reports that the Size guide menu link returns 404, excludes a third product because it sells on backorder by design, flags a discount whose ACTIVE status contradicts its start date, tables the metadata gaps, and lists five suggested actions." />
+
+It also refuses to be fooled by a store that answers 200 for pages that do not
+exist — it probes for that first, and says the link check measured nothing
+rather than reporting a clean bill of health.
+
 ## StoreHand proposes, you approve
 
 Three of the four skills read your store and write nothing to it — not a
@@ -107,8 +117,17 @@ so that it cannot surprise you. It works in two steps:
 
 Any field somebody changed in the Shopify admin in between is skipped and
 reported, never overwritten. That skip is not a nicety — it was tested against a
-live store before this shipped. Without the `write_products` scope the skill
-still works: it produces the proposal and stops at the point of writing.
+live store before this shipped. Here it is happening:
+
+<img src="https://raw.githubusercontent.com/storehand/storehand/refs/heads/main/assets/demo-listings-apply.png" alt="A StoreHand apply run: 1 product written, 2 fields, 3 fields not written. It lists the SEO title and image alt text it wrote, then reports that the product's SEO description was changed in the admin after the proposal was made and was therefore skipped, and that two more fields were held back because they still contained unfilled placeholders. It ends by saying the proposal file was not modified and can safely be applied again." />
+
+Two fields written, three not — one because somebody had edited it in the admin
+meanwhile, two because they still carried blanks the copy could not fill without
+inventing a fact. Re-running the same file is safe: anything already written
+comes back as already-applied and is not written twice.
+
+Without the `write_products` scope the skill still works: it produces the
+proposal and stops at the point of writing.
 
 ## What StoreHand may see
 
