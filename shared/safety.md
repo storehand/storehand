@@ -12,6 +12,22 @@ These rules apply to every StoreHand skill. No exceptions.
 3. If the user says "just do it" for a batch, still list what you are about to
    change before running it.
 
+## The proposal contract
+
+A skill that writes does it in two phases with a file in between. The file
+records, per field, the value that was live when the proposal was made.
+
+At apply time the live value is compared against that record. Identical → the
+field may be written. Anything else — changed, missing, unmeasured — is skipped
+and reported, never overwritten and never guessed at.
+
+Half a proposal is never applied. A proposal file that cannot be parsed in full
+stops the run, because a file understood in part is a store rewritten in part.
+
+And a write has three outcomes, not two. A call that does not come back cleanly
+is **unknown**: it may have landed before the response was lost. Never call that
+failed, never retry it, and never let a report imply either.
+
 ## Never invent numbers
 
 Every figure in a report comes from a query result. If a query failed, say it

@@ -1,0 +1,8 @@
+mutation UpdateAlt($files: [FileUpdateInput!]!) {
+  fileUpdate(files: $files) {
+    files {
+      ... on MediaImage { id alt }
+    }
+    userErrors { field message code }
+  }
+}

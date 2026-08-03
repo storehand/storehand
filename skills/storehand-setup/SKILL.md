@@ -78,18 +78,74 @@ Explain before running:
 - The token is stored locally by the Shopify CLI in `~/.config/`, and it refreshes
   itself.
 
-**If no browser is available** (a server, a remote SSH session), use the device
-flow instead:
+**If no browser is available** (a server, a remote SSH session), the CLI still
+needs one — it has no device-code flow. Verified against CLI 4.5.2 on
+2026-08-03: `SHOPIFY_CLI_DEVICE_AUTH` is listed among the CLI's environment
+variable names but is read nowhere in its code, so setting it changes nothing
+and `shopify store auth` still fails with `spawn xdg-open ENOENT`.
+
+What works is borrowing the browser on another machine and tunnelling the
+callback back. Three steps, in this order:
+
+1. Give the headless box something to "open" with, so the URL is printed
+   instead of the command failing:
+
+   ```bash
+   printf '#!/bin/sh\nprintf "%%s\\n" "$1"\n' > /usr/local/bin/xdg-open
+   chmod +x /usr/local/bin/xdg-open
+   ```
+
+2. From the machine that *does* have a browser, open a tunnel and leave it
+   running. **Read the port out of the printed URL rather than assuming it** —
+   it is the `redirect_uri` parameter, and it is not the `3456` that appears as
+   a constant in the CLI's own source:
+
+   ```bash
+   ssh -L <port>:127.0.0.1:<port> <user>@<host>
+   ```
+
+3. Run `shopify store auth` on the headless box. It prints the authorization
+   URL. Open that URL in the browser on the other machine and approve. Shopify
+   redirects to `127.0.0.1:<port>`, the tunnel carries it back, and the CLI
+   stores the token.
+
+If the tunnel was not up in time, the browser shows a connection error but the
+authorization code is still in its address bar and the CLI is still listening.
+Deliver it by hand on the headless box — the code is single use, so do this
+once:
 
 ```bash
-SHOPIFY_CLI_DEVICE_AUTH=1 shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation
+curl "http://127.0.0.1:<port>/auth/callback?code=<code>&shop=<domain>&state=<state>"
 ```
-
-That prints a code and a URL to open on any other device.
 
 Note on order history: the `read_orders` scope covers roughly the last 60 days,
 which is more than a daily briefing needs. Longer history needs extra permission
 from Shopify and is not part of StoreHand.
+
+### If they want the listing writer
+
+`product-listing-writer` is the only skill that changes anything, and it needs
+one scope more. Offer this, do not run it by default — a store connected with
+the five read-only scopes is the safer resting state, and every other skill
+works without it.
+
+```bash
+shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation,write_products
+```
+
+Say what it does and does not buy them:
+
+- `write_products` lets StoreHand change product titles, descriptions, SEO
+  fields and image alt text. Nothing else — not prices, not inventory, not
+  orders, not customers.
+- Even with the scope granted, nothing is written without them approving that
+  specific change set first. The listing writer proposes into a file they read
+  and edit, and applies only what is still in it.
+- Without the scope, the listing writer still works up to the point of writing:
+  it produces the proposal and then stops, saying which scope is missing.
+
+They can add it later. Re-running the auth command with the longer scope list
+replaces the old grant, so this is not a decision they are stuck with.
 
 ## Step 6 — Smoke test
 
