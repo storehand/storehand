@@ -91,6 +91,31 @@ Note on order history: the `read_orders` scope covers roughly the last 60 days,
 which is more than a daily briefing needs. Longer history needs extra permission
 from Shopify and is not part of StoreHand.
 
+### If they want the listing writer
+
+`product-listing-writer` is the only skill that changes anything, and it needs
+one scope more. Offer this, do not run it by default — a store connected with
+the five read-only scopes is the safer resting state, and every other skill
+works without it.
+
+```bash
+shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation,write_products
+```
+
+Say what it does and does not buy them:
+
+- `write_products` lets StoreHand change product titles, descriptions, SEO
+  fields and image alt text. Nothing else — not prices, not inventory, not
+  orders, not customers.
+- Even with the scope granted, nothing is written without them approving that
+  specific change set first. The listing writer proposes into a file they read
+  and edit, and applies only what is still in it.
+- Without the scope, the listing writer still works up to the point of writing:
+  it produces the proposal and then stops, saying which scope is missing.
+
+They can add it later. Re-running the auth command with the longer scope list
+replaces the old grant, so this is not a decision they are stuck with.
+
 ## Step 6 — Smoke test
 
 ```bash
