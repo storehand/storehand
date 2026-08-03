@@ -112,3 +112,57 @@ test('a live value missing from the fetch counts as a conflict, never as a match
   assert.equal(plan.apply.length, 0);
   assert.equal(plan.skipped[0].reason, 'not-measured');
 });
+
+test('a live null and a recorded empty string count as a match, and the field is applied', () => {
+  const plan = planApply(
+    proposal([{ name: 'seo.description', current: '', proposed: 'Ongevoerde linnen blazer.' }]),
+    live({ 'seo.description': null }),
+  );
+  assert.equal(plan.skipped.length, 0);
+  assert.deepEqual(plan.apply[0].productInput, { seo: { description: 'Ongevoerde linnen blazer.' } });
+});
+
+test('a live null where the proposal recorded actual text is still changed-in-admin', () => {
+  const plan = planApply(
+    proposal([{ name: 'seo.description', current: 'Al ingevuld', proposed: 'Nieuwe tekst' }]),
+    live({ 'seo.description': null }),
+  );
+  assert.equal(plan.apply.length, 0);
+  assert.deepEqual(plan.skipped, [{
+    handle: 'linnen-blazer', field: 'seo.description', reason: 'changed-in-admin',
+    wasInProposal: 'Al ingevuld', isNow: null,
+  }]);
+});
+
+test('an image.alt that is null on live media and empty string in the proposal is applied', () => {
+  const plan = planApply(
+    proposal([{ name: 'image.alt', mediaId: 'gid://shopify/MediaImage/MEDIA_ID', current: '', proposed: 'Alt' }]),
+    live({}, [{ id: 'gid://shopify/MediaImage/MEDIA_ID', alt: null }]),
+  );
+  assert.equal(plan.skipped.length, 0);
+  assert.deepEqual(plan.apply[0].files, [{ id: 'gid://shopify/MediaImage/MEDIA_ID', alt: 'Alt' }]);
+});
+
+test('a media object with no alt key at all reports not-measured, not a match', () => {
+  const plan = planApply(
+    proposal([{ name: 'image.alt', mediaId: 'gid://shopify/MediaImage/MEDIA_ID', current: '', proposed: 'Alt' }]),
+    live({}, [{ id: 'gid://shopify/MediaImage/MEDIA_ID' }]),
+  );
+  assert.equal(plan.apply.length, 0);
+  assert.deepEqual(plan.skipped, [{
+    handle: 'linnen-blazer', field: 'image.alt', reason: 'not-measured',
+    wasInProposal: '', isNow: null,
+  }]);
+});
+
+test('a field genuinely absent from values still reports not-measured', () => {
+  const plan = planApply(
+    proposal([{ name: 'title', current: 'Oud', proposed: 'Nieuw' }]),
+    live({}),
+  );
+  assert.equal(plan.apply.length, 0);
+  assert.deepEqual(plan.skipped, [{
+    handle: 'linnen-blazer', field: 'title', reason: 'not-measured',
+    wasInProposal: 'Oud', isNow: null,
+  }]);
+});

@@ -43,9 +43,9 @@ export function planApply(proposal, liveData) {
       // liveProduct.values may be entirely absent (a partial or failed fetch),
       // not just missing the one key — optional chaining covers both, and
       // either way an unmeasured field must never read as a match.
-      const liveValue = isAlt ? (media.alt ?? '') : liveProduct.values?.[field.name];
+      const raw = isAlt ? media.alt : liveProduct.values?.[field.name];
 
-      if (liveValue === undefined) {
+      if (raw === undefined) {
         plan.skipped.push({
           handle: product.handle, field: field.name, reason: 'not-measured',
           wasInProposal: field.current, isNow: null,
@@ -53,10 +53,20 @@ export function planApply(proposal, liveData) {
         continue;
       }
 
+      // Shopify returns `null`, not `""`, for an empty text field — and the
+      // proposal file has no way to write "null", so it always recorded such
+      // a field as `""`. Normalising here (not undefined) is what keeps
+      // `undefined` meaning "not measured" while `null` reads as the empty
+      // value it actually represents.
+      const liveValue = raw ?? '';
+
       if (liveValue !== field.current) {
+        // Report the raw fetched value, not the normalised one: a shop owner
+        // reading the skip list should see the `null` Shopify actually
+        // returned, not an empty string that quietly hides what happened.
         plan.skipped.push({
           handle: product.handle, field: field.name, reason: 'changed-in-admin',
-          wasInProposal: field.current, isNow: liveValue,
+          wasInProposal: field.current, isNow: raw,
         });
         continue;
       }
