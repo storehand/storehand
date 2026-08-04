@@ -9,10 +9,33 @@ Get the user from a fresh install to a working, connected store profile. Aim for
 under ten minutes.
 
 **Two kinds of path, do not mix them up.** This plugin's own files —
-`shared/safety.md` and the `templates/` directory — live under
-`$CLAUDE_PLUGIN_ROOT`. The profile you are about to create (`.storehand/`) goes
-in the user's working directory. If `$CLAUDE_PLUGIN_ROOT` is empty, say so and
-stop; do not guess a path.
+`shared/safety.md` and the `templates/` directory — live under the plugin's
+install directory. The profile you are about to create (`.storehand/`) goes in
+the user's working directory.
+
+## Step 0 — Find the plugin
+
+`$CLAUDE_PLUGIN_ROOT` is empty in the environment of a Bash tool call. That is
+measured, not assumed; the working routes and the reasoning are in
+`shared/plugin-root.md`. Run this once, before anything else:
+
+```bash
+ROOT=$( {
+  printf '%s\n' "${CLAUDE_PLUGIN_ROOT:-}"
+  printf '%s' "$PATH" | tr ':' '\n' | sed -n 's|/bin$||p' | grep -E '/storehand/[^/]+$'
+  node -e 'const fs=require("fs"),os=require("os"),p=require("path");try{const j=JSON.parse(fs.readFileSync(p.join(os.homedir(),".claude","plugins","installed_plugins.json"),"utf8"));for(const[k,v]of Object.entries(j.plugins||{}))if(k.split("@")[0]==="storehand"&&v[0]&&v[0].installPath){console.log(v[0].installPath);break}}catch{}' 2>/dev/null
+} | while IFS= read -r c; do
+  [ -n "$c" ] && [ -f "$c/shared/api-version.md" ] && { printf '%s' "$c"; break; }
+done )
+[ -n "$ROOT" ] && echo "StoreHand plugin root: $ROOT" || echo "StoreHand plugin root NOT FOUND"
+```
+
+Shell state does not survive between tool calls, so there is nothing to export
+into: take the path it printed and **substitute it literally** wherever these
+instructions write `$CLAUDE_PLUGIN_ROOT`. Never guess it.
+
+Printed `NOT FOUND`? Stop, and tell the user to reinstall the plugin with
+`/plugin marketplace add storehand/storehand`.
 
 Read `$CLAUDE_PLUGIN_ROOT/shared/safety.md` before you start.
 

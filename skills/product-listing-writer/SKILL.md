@@ -10,10 +10,33 @@ writes a file you edit. **Apply** writes to the store, and only the fields you
 left in that file that nobody touched in the admin meanwhile.
 
 **Two kinds of path, do not mix them up.** Files belonging to this plugin —
-`shared/*.md`, `queries/`, `mutations/`, `scripts/` — live under
-`$CLAUDE_PLUGIN_ROOT`. The store profile and the proposals (`.storehand/`) live
-in the user's working directory. If `$CLAUDE_PLUGIN_ROOT` is empty, say so and
-stop; do not guess a path.
+`shared/*.md`, `queries/`, `mutations/`, `scripts/` — live under the plugin's
+install directory. The store profile and the proposals (`.storehand/`) live in
+the user's working directory.
+
+## Step 0 — Find the plugin
+
+`$CLAUDE_PLUGIN_ROOT` is empty in the environment of a Bash tool call. That is
+measured, not assumed; the working routes and the reasoning are in
+`shared/plugin-root.md`. Run this once, before anything else:
+
+```bash
+ROOT=$( {
+  printf '%s\n' "${CLAUDE_PLUGIN_ROOT:-}"
+  printf '%s' "$PATH" | tr ':' '\n' | sed -n 's|/bin$||p' | grep -E '/storehand/[^/]+$'
+  node -e 'const fs=require("fs"),os=require("os"),p=require("path");try{const j=JSON.parse(fs.readFileSync(p.join(os.homedir(),".claude","plugins","installed_plugins.json"),"utf8"));for(const[k,v]of Object.entries(j.plugins||{}))if(k.split("@")[0]==="storehand"&&v[0]&&v[0].installPath){console.log(v[0].installPath);break}}catch{}' 2>/dev/null
+} | while IFS= read -r c; do
+  [ -n "$c" ] && [ -f "$c/shared/api-version.md" ] && { printf '%s' "$c"; break; }
+done )
+[ -n "$ROOT" ] && echo "StoreHand plugin root: $ROOT" || echo "StoreHand plugin root NOT FOUND"
+```
+
+Shell state does not survive between tool calls, so there is nothing to export
+into: take the path it printed and **substitute it literally** wherever these
+instructions write `$CLAUDE_PLUGIN_ROOT`. Never guess it.
+
+Printed `NOT FOUND`? Stop, and tell the user to reinstall the plugin with
+`/plugin marketplace add storehand/storehand`.
 
 Read `$CLAUDE_PLUGIN_ROOT/shared/safety.md` and
 `$CLAUDE_PLUGIN_ROOT/shared/store-profile.md` before you start.
@@ -333,7 +356,7 @@ the proposal file is the record.
 | `userErrors` non-empty | That product — or that one image, for `fileUpdate` — was not written. Report it and continue with the rest |
 | A mutation call exits non-zero, times out, or its output does not parse | **Unknown, not failed.** Stop the run immediately. Name the exact product and field (or image) in flight, and tell the owner to check it in the Shopify admin before doing anything else. Never retry |
 | A field does not exist (API version drift) | Show the error, name the query file, point at `$CLAUDE_PLUGIN_ROOT/shared/api-version.md` |
-| `$CLAUDE_PLUGIN_ROOT` is empty | Stop; never guess where plugin files are |
+| Step 0 printed `NOT FOUND` | Stop and tell the user to reinstall; never guess where plugin files are |
 
 A store that was not written and a store that was written wrong look identical
 in a report that hides errors. Never let them.
