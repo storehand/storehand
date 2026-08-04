@@ -1,9 +1,22 @@
-# Dogfooding the SEO metadata audit — run 1
+# Dogfooding the SEO metadata audit — three runs on a live store
 
 Date: 2026-08-04. Task 10 of `docs/plans/2026-08-04-seo-metadata-audit.md`.
-**This is the read-only half.** The audit ran against a live store of 42
-products; nothing was written, and `product-listing-writer` has not been let
-near this store yet. Run 2 and the difference count still have to happen.
+
+Three sweeps of a live 42-product catalogue, with a real write in between: the
+audit read the store, `product-listing-writer` fixed one product against what it
+saw in the photos, and the next sweeps proved the difference count and the
+partial-update reporting.
+
+**Three bugs came out of it, two of them in shipped code**, and all three have
+the same shape — a partial or impossible result that reads as a complete one:
+
+1. a count of 76 findings on a catalogue of 42 (this branch);
+2. an instruction to fetch an image URL that no query returned (v0.3.0);
+3. alt text documented as covered by `write_products` when Shopify keeps it
+   behind `write_files` (v0.3.0), with an errors table that sent the user back
+   to the scope they already had.
+
+Each is written up below with its fix and the test that now holds it.
 
 ## What ran
 
