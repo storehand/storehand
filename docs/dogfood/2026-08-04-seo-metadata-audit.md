@@ -267,5 +267,29 @@ more carefully.
 - **A catalogue that needs more than one page.** 42 products fit in one sweep;
   the multi-page path was proven only with an artificially small page size.
 
-Skill #5 is **not shippable** on this evidence alone. The roadmap row that says
-`Shipped` is a claim ahead of its evidence until the items above are closed.
+## Shipped anyway, and why
+
+An earlier draft of this note ended "skill #5 is not shippable on this evidence
+alone". It went out in v0.4.0 regardless, as a deliberate call rather than an
+oversight, so the reasoning belongs here next to the gaps.
+
+**What tipped it:** two of the three bugs above are in *shipped* 0.3.0 and are
+hurting users now. Anyone who followed the documented setup and tried to write
+alt text hit a refused scope and an errors table that sent them back to the
+scope they already had. Holding that fix until a second test store exists costs
+more than the three untested paths risk.
+
+**What the untested paths actually risk:** all three are degradation paths, not
+data paths. A store without the menu scope gets a coarser ordering; a store with
+no collections gets an untested sentence; a large catalogue exercises paging that
+was proven at `first: 5` but not at scale. None of them can write to a store,
+and none can make the audit report a number it did not measure — the count check
+in Step 4 holds regardless.
+
+**What would change the call:** an untested path that could produce a wrong
+number rather than a worse ordering. There is none here. If a future round finds
+one, it blocks the release rather than joining this list.
+
+The three gaps stay open above, in their own words, and the roadmap says
+`Shipped`. Both are true at once, and this paragraph is what makes them
+compatible instead of contradictory.
