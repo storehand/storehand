@@ -147,6 +147,13 @@ For each product, write a proposal for **only** the fields that need one:
 | `seo.description` | It breaks a rule in `shared/metadata-rules.md` |
 | `image.alt` | It breaks a rule in `shared/metadata-rules.md`. One proposal per `MediaImage` node, each with its own media id. An alt that already describes this particular photo is fine — **leave it alone** |
 
+The commonest real alt-text problem is not an empty field, it is the **same alt
+on every photo** of a product — usually the product title, repeated. Measured on
+a live store: 429 of 429 images, and not one empty field. Photo one and photo
+six then say the same thing, while photo six is a close-up of the hem. That is
+the case worth fixing, and a rule that only fires on empty fields would have
+repaired nothing at all on that store.
+
 Rules for the copy itself:
 
 - The voice comes from `store.md`. Not your defaults, not "premium quality".

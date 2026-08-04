@@ -46,3 +46,33 @@ test('every skill that judges metadata points at the shared rules', () => {
     );
   }
 });
+
+const writer = () => read('skills/product-listing-writer/SKILL.md');
+
+test('the duplicate-alt pattern is a rule, not folklore', () => {
+  assert.match(
+    read('shared/metadata-rules.md'),
+    /identical to the alt of another image on the same product/i,
+    'measured: 429 of 429 images on a live store, and 0 empty ones',
+  );
+});
+
+test('the writer no longer treats an empty field as the only alt problem', () => {
+  assert.doesNotMatch(
+    writer(),
+    /`image\.alt` \| Empty or null\./,
+    'the empty-only rule repaired nothing on a real store',
+  );
+});
+
+test('an alt that already says something is left alone', () => {
+  assert.match(writer(), /leave it alone/i);
+});
+
+test('the writer explains why a duplicate alt is the case worth fixing', () => {
+  assert.match(
+    writer(),
+    /same alt on every photo/i,
+    'without the reason, the next editor narrows this rule back to empty fields',
+  );
+});
