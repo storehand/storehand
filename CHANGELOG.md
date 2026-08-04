@@ -9,6 +9,70 @@ Before 1.0 the shape of a skill's output is not a stable interface — the
 
 ## [Unreleased]
 
+## [0.4.0] — 2026-08-04
+
+### Added
+
+- **`seo-metadata-audit` (skill #5).** A read-only sweep of the *whole*
+  catalogue — the first skill that pages past `hasNextPage` instead of stopping
+  at one page. It judges SEO titles, meta descriptions, image alt text and
+  product titles, orders findings by severity crossed with whether the product
+  is reachable at all, and hands the fixing to `product-listing-writer`. It
+  writes nothing and asks for no write scope. Duplicate product titles are its
+  finding alone: no other skill sees enough of the catalogue to make that call.
+- **`shared/metadata-rules.md`.** Every quality threshold now lives in one file,
+  read by both the writer and the audit. A test fails if a threshold reappears
+  inside a skill — two skills with their own copy of "60 characters" would
+  eventually disagree without anyone noticing.
+- **A declared store `language`.** `storehand-setup` now asks for it and
+  everything StoreHand writes uses it. The old rule was "write in the language
+  the existing listings are in", which on a store importing from a foreign
+  supplier keeps the supplier's language forever — measured on a live Dutch
+  store carrying 429 English alt texts. Existing profiles have no `language`
+  key: both skills ask for it rather than guessing.
+- **A `Network:` line in every skill**, checked by a test against the list in
+  `shared/safety.md`, so the privacy promise cannot go stale unnoticed. That
+  list gained a fourth route (product images) and a second one it had always
+  been missing: the localhost callback `storehand-setup` has always used.
+
+### Changed
+
+- **`product-listing-writer` looks at your product photos.** It fetches the
+  images it is proposing alt text for and describes what is in them, capped at
+  3 images per product and 30 per round. Describes the product, never the model,
+  and never deduces fabric or composition from a picture — looking is measuring,
+  deducing is inventing.
+- **Its alt-text rule fires on more than an empty field.** It now also proposes
+  for an alt duplicated across a product's images, one equal to the vendor name,
+  or a filename. Measured: on a live store, **0 of 429 images had an empty alt
+  and all 429 shared one with another image of the same product** — so the old
+  rule would have repaired nothing at all there.
+
+### Fixed
+
+- **Alt text needs `write_files`, not `write_products`.** Shopify keeps alt text
+  behind `fileUpdate`. The README promised `write_products` covered it, and
+  `storehand-setup` requested only that scope, so anyone who followed the setup
+  exactly had every alt-text write refused — and the errors table then told them
+  to re-authorise with the scope they already had. Both scopes are now requested
+  and documented, and the errors table separates the two failures: refused on
+  `productUpdate` means read-only, refused on `fileUpdate` alone means the text
+  was written and the alt text was not.
+- **The listing writer's queries now return the image URL** its own instructions
+  tell you to fetch. All three selected `id` and `alt` only, so the "fetch the
+  image and look at it" step had nothing to work with.
+- The README no longer quotes a test count that had gone stale, and its network
+  sentence matches `shared/safety.md`.
+
+**If you use the listing writer, re-authorise** to add `write_files` — otherwise
+alt text is skipped and reported as not written. Everything else keeps working
+unchanged.
+
+Evidence for all of the above: [`docs/dogfood/`](docs/dogfood/) — three sweeps of
+a live catalogue with a real write in between. Three edge cases remain untested
+and are named there: a store without the menu scope, a store with no collections,
+and a catalogue large enough to need several pages.
+
 ## [0.3.0] — 2026-08-04
 
 ### Fixed
