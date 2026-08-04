@@ -9,6 +9,8 @@ Two phases, and they never run in one breath. **Propose** reads the store and
 writes a file you edit. **Apply** writes to the store, and only the fields you
 left in that file that nobody touched in the admin meanwhile.
 
+Network: your own store's product images (route 4 in shared/safety.md)
+
 **Two kinds of path, do not mix them up.** Files belonging to this plugin —
 `shared/*.md`, `queries/`, `mutations/`, `scripts/` — live under the plugin's
 install directory. The store profile and the proposals (`.storehand/`) live in

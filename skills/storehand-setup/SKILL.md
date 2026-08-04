@@ -8,6 +8,8 @@ description: Set up StoreHand for a Shopify store — create the store profile i
 Get the user from a fresh install to a working, connected store profile. Aim for
 under ten minutes.
 
+Network: the localhost auth callback (route 2 in shared/safety.md)
+
 **Two kinds of path, do not mix them up.** This plugin's own files —
 `shared/safety.md` and the `templates/` directory — live under the plugin's
 install directory. The profile you are about to create (`.storehand/`) goes in

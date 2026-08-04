@@ -8,6 +8,8 @@ description: Weekly read-only health check of a Shopify store — active product
 One weekly, read-only sweep. Four checks, one report, and a small memory so the
 report can say "new" and "open since". Writes nothing to the store, ever.
 
+Network: your own storefront (route 3 in shared/safety.md)
+
 **Two kinds of path, do not mix them up.** Files belonging to this plugin —
 `shared/*.md`, the `queries/` and `scripts/` directories — live under the
 plugin's install directory. The store profile (`.storehand/`) lives in the

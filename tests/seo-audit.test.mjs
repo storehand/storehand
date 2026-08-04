@@ -211,3 +211,43 @@ test('a partial alt fix is shown as partial in the report', () => {
     'images 1-3 fixed leaves the product flagged — say so or the work looks wasted',
   );
 });
+
+// --- the network promise ---------------------------------------------------
+
+test('every skill declares what it does on the network', () => {
+  for (const [name, text] of skillFiles()) {
+    // raw: the declaration is a line, and its shape is the point
+    assert.match(
+      text,
+      /^Network: .+$/m,
+      `${name} has no Network: declaration — add one, "none" is a valid answer`,
+    );
+  }
+});
+
+test('a skill that declares network traffic is named in the promise', () => {
+  const promise = read('shared/safety.md');
+  for (const [file, text] of skillFiles()) {
+    const skill = file.split('/')[1];
+    const declared = text.match(/^Network: (.+)$/m)[1].trim();
+    if (declared.toLowerCase() === 'none') {
+      assert.doesNotMatch(
+        promise,
+        new RegExp('`' + skill + '`'),
+        `${skill} declares no traffic of its own but the promise lists it`,
+      );
+      continue;
+    }
+    assert.match(
+      promise,
+      new RegExp('`' + skill + '`'),
+      `${skill} declares "${declared}" but shared/safety.md does not name it`,
+    );
+  }
+});
+
+test('the promise names the image route and counts its own routes', () => {
+  const s = flat(read('shared/safety.md'));
+  assert.match(s, /product images/i);
+  assert.match(s, /exactly four ways/i);
+});

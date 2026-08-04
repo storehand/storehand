@@ -8,6 +8,8 @@ description: Open the day with a short read-only briefing on a Shopify store —
 One short report, every morning, from four read-only queries. Writes nothing to
 the store, ever.
 
+Network: none
+
 **Two kinds of path, do not mix them up.** Files belonging to this plugin —
 `shared/safety.md`, `shared/store-profile.md`, `shared/api-version.md` and the
 `queries/` directory — live under the plugin's install directory. The store
