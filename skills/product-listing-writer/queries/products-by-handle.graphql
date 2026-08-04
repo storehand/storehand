@@ -10,7 +10,7 @@ query ProductsByHandle($query: String!, $first: Int!) {
       seo { title description }
       media(first: 10) {
         pageInfo { hasNextPage }
-        nodes { ... on MediaImage { id alt } }
+        nodes { ... on MediaImage { id alt image { url } } }
       }
     }
   }

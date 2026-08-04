@@ -84,6 +84,66 @@ result, not a disappointment: no duplicate titles, no `seo.title` equal to the
 product title, no missing alt text. A skill that finds something everywhere is
 not judging, it is complaining. Worth re-checking on a messier store.
 
+## The listing writer, propose phase — and the bug that stopped it
+
+Ran against the `tops` collection on the same store. 17 products, 15 without a
+meta description. Reduced deliberately to one product and three images, enough
+to prove the mechanism without spending a context window.
+
+### A shipped instruction that could not be followed
+
+Step 4 tells the reader to fetch each image and look at it, and says the URL
+"comes back on the `MediaImage` node". **It does not.** None of the three
+listing-writer queries selected `image { url }` — they returned `id` and `alt`
+only. A user following the instruction literally would have had nothing to
+fetch.
+
+This is the same failure class as the `$CLAUDE_PLUGIN_ROOT` bug of 2026-08-04:
+an instruction that reads as complete and cannot be executed. It was written in
+the same session that added the instruction, and it survived a full test suite,
+because nothing tested that the queries could satisfy what the prose asked for.
+
+Fixed in all three queries, and a test now asserts that any query selecting
+`MediaImage` also returns the image URL.
+
+### What the photos actually showed
+
+The three images all carried the identical alt
+`"Gimme Knitted Comfort T-Shirts - Soft, Stylish & All Fit"`. Looking at them:
+
+| Image | What is really there |
+|---|---|
+| 1 | The T-shirt in **taupe**, cropped at the hip |
+| 2 | The same shirt in **pale yellow**, cropped at the hip |
+| 3 | The pale yellow shirt **full length**, over grey wide-leg jeans |
+
+So the duplicate alt was hiding two different things at once: **two colours**
+and **two framings**. A shopper searching for a beige top never reaches image 1,
+and a screen reader announces the same English supplier name three times on a
+Dutch store.
+
+**A third alt-text problem that no rule catches: language.** The alts are the
+supplier's English product name while the store, its titles and its copy are
+Dutch. `shared/metadata-rules.md` has no rule for that, and this store makes it
+429 images wide. Candidate rule, not yet added — one store is not evidence, and
+that is exactly the reasoning that kept the vendor-name pattern marked unproven.
+
+### Proposed output
+
+```
+1. "Aansluitend basic T-shirt met ronde hals in taupe,
+    gecombineerd met een grijze jeans"
+2. "Hetzelfde T-shirt in zachtgeel, met korte mouwen en ronde hals"
+3. "Zachtgeel basic T-shirt in vol beeld, op een grijze wide-leg jeans"
+
+seo.description: "Aansluitend basic T-shirt met ronde hals en korte mouwen.
+                  Verkrijgbaar in taupe en zachtgeel."
+```
+
+No fabric, no composition, no "premium quality" — colour, cut and framing only,
+which is what is visible. The proposal file was **not** written and nothing went
+to Shopify: this stops at the point where the owner has to approve.
+
 ## What has not been tested
 
 - **The second run and the difference count.** Half of what makes this an audit

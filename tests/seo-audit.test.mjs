@@ -289,3 +289,16 @@ test('counts are checked against the size of the sweep before printing', () => {
     'keep the real example — an impossible number that merely looks alarming',
   );
 });
+
+test('every listing-writer query returns the image URL it tells you to fetch', () => {
+  const dir = path.join(REPO, 'skills/product-listing-writer/queries');
+  for (const file of fs.readdirSync(dir)) {
+    const q = fs.readFileSync(path.join(dir, file), 'utf8');
+    if (!/MediaImage/.test(q)) continue;
+    assert.match(
+      flat(q),
+      /MediaImage \{[^}]*image \{[^}]*url/,
+      `${file} selects MediaImage but no image URL — the skill tells the reader to fetch one`,
+    );
+  }
+});
