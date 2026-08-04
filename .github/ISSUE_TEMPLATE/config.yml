@@ -1,0 +1,11 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Security issue
+    url: https://github.com/storehand/storehand/security/advisories/new
+    about: Report it privately, never in a public issue. See SECURITY.md.
+  - name: Getting it connected
+    url: https://github.com/storehand/storehand/blob/main/docs/connect.md
+    about: How the Shopify connection works, including headless machines and the auth pitfalls we hit.
+  - name: A hosted version
+    url: https://storehand.github.io
+    about: Would rather not run this yourself? Leave your email — it gets built only if enough people ask.
