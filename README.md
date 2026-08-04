@@ -109,15 +109,26 @@ Three of the four skills read your store and write nothing to it — not a
 product, not a price, not an order.
 
 `product-listing-writer` is the one that can change something, and it is built
-so that it cannot surprise you. It works in two steps:
+so that it cannot surprise you. It works in two steps.
 
-1. It writes a **proposal file** listing the current and the suggested text for
-   every field. You read it and edit it.
-2. A **separate command** applies exactly what you left in that file.
+**Step one writes a file, not your store:**
 
-Any field somebody changed in the Shopify admin in between is skipped and
-reported, never overwritten. That skip is not a nicety — it was tested against a
-live store before this shipped. Here it is happening:
+<img src="https://raw.githubusercontent.com/storehand/storehand/refs/heads/main/assets/demo-listings-propose.png" alt="A StoreHand proposal run: it opens by saying nothing has been written to the store and the whole run was read-only, then reports 5 field proposals across 2 of the 3 outerwear products, written to a file. It flags one product whose record carries no fabric, cut or features, saying it left the shape of the sentences with a placeholder where the facts go rather than inventing them. It lists what it left alone deliberately, including a product whose copy was already right, and closes by warning that two fields would publish literal placeholders to the storefront if applied as they stand." />
+
+It says so in the first line, and it means it: that entire run was read-only.
+Note what it refused to do. Where the product record had no fabric, no cut and
+no features, it left the shape of the sentence with a `[?]` where the fact goes
+and told you which facts it needs from you — rather than writing something
+plausible. It skipped a product whose copy was already right instead of
+rewriting it to look busy. And it ends by warning you about its own output:
+apply this as it stands and two fields publish a literal `[?]` to your
+storefront.
+
+**Step two applies exactly what you left in that file** — and nothing that
+moved underneath you in the meantime. Any field somebody changed in the Shopify
+admin in between is skipped and reported, never overwritten. That skip is not a
+nicety; it was tested against a live store before this shipped. Here it is
+happening:
 
 <img src="https://raw.githubusercontent.com/storehand/storehand/refs/heads/main/assets/demo-listings-apply.png" alt="A StoreHand apply run: 1 product written, 2 fields, 3 fields not written. It lists the SEO title and image alt text it wrote, then reports that the product's SEO description was changed in the admin after the proposal was made and was therefore skipped, and that two more fields were held back because they still contained unfilled placeholders. It ends by saying the proposal file was not modified and can safely be applied again." />
 
@@ -188,6 +199,20 @@ against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 replies, email marketing and social, discount campaign creation, A/B testing.
 Each needs either realtime infrastructure or a third-party platform, and both
 break the "no external services" promise this project runs on.
+
+### Following along
+
+Three skills to go. Each one ships the same way: built, run against a real
+store, evidence in `docs/dogfood/`, and only then listed as shipped.
+
+- **Watch → Custom → Releases** tells you when one lands, and nothing else.
+  Plain *Watch* also sends you every issue and pull request, which is probably
+  not what you want.
+- **A star** is how the next shop owner finds this. That is the entire
+  distribution plan of a project with no marketing budget behind it.
+- **[Leave your email](https://storehand.github.io)** only if you want the
+  hosted version rather than running this yourself — see below. One message,
+  ever.
 
 ## A hosted version — only if enough people want one
 
