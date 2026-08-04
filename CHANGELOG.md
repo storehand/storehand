@@ -35,6 +35,10 @@ number, so the fix does not reach an existing install on its own.
   unused export.
 - 130 tests, up from 121. Nine of them hold the four copies of the Step 0
   snippet byte-identical and run it against a home directory with a space in it.
+- The README now shows the **proposal** step as well as the apply step. The
+  proposal screenshot is the only place the read-only promise is made by the
+  tool itself, and the only one showing it refuse to invent a fact it did not
+  have.
 
 ## [0.2.0] — 2026-08-03
 
