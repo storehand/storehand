@@ -28,12 +28,15 @@
 
 **No `scripts/` for this skill.** The audit compares strings and counts; the user's Claude does that directly. Nothing here needs a shipped executable.
 
-**Every text assertion in this plan must tolerate a line break.** These tests
-match against markdown that is hard-wrapped at 80 columns, so a phrase can be
-split anywhere. Write `/same alt\s+on every photo/i`, never
-`/same alt on every photo/i` — the second one passes or fails depending on where
-the paragraph happened to wrap, which is a test that measures formatting rather
-than meaning. Found the hard way in Task 3.
+**Every text assertion matches against `flat(...)`, never against raw markdown.**
+`tests/seo-audit.test.mjs` defines `const flat = (text) => text.replace(/\s+/g, ' ')`
+and the readers return flattened text. These files are hard-wrapped at 80
+columns, so a phrase can be split at any space: a regex with a literal space in
+it passes or fails depending on where the paragraph happened to wrap, which
+measures formatting rather than meaning. Found twice in Tasks 3 and 4 — first
+patched by sprinkling `\s+` between words, which only moved the problem to the
+next gap. Use the raw text only where line structure is the point, such as the
+`Network:` declaration in Task 8.
 
 ---
 

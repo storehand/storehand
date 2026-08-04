@@ -154,6 +154,43 @@ six then say the same thing, while photo six is a close-up of the hem. That is
 the case worth fixing, and a rule that only fires on empty fields would have
 repaired nothing at all on that store.
 
+### Alt text: look at the photo
+
+For every image you are proposing alt text for, fetch it and look at it. The URL
+comes back on the `MediaImage` node.
+
+```bash
+curl -s -o "$V/img-1.jpg" "<image.url from the query>"
+```
+
+Then read that file and describe what is actually in it.
+
+**Two caps, and they are on images, not on products: at most 3 images per
+product, and at most 30 images in the whole round.** Measured on a live store on
+2026-08-04: the median product carries 9 images and the busiest carries 20, so
+"ten products" is anywhere between 50 and 200 images. A cap that varies fourfold
+depending on which products came back is not a cap. The first three images are
+what a shopper sees on a listing and a product page, so that is where the value
+is.
+
+**Say which images you covered.** Images four and up keep their old alt text, so
+an audit will still flag that product — report "images 1–3 updated" rather than
+implying the product is done. Work that looks like it achieved nothing is worse
+than work not done.
+
+Two rules decide whether the result helps or misleads:
+
+- **Describe the product, not the model.** "Woman with curly hair" helps nobody
+  searching for this garment or hearing the page read aloud. The garment is the
+  subject; the person wearing it is not.
+- **Only what is visible.** Looking at a photo is measuring. Deducing fabric or
+  composition from one is inventing, and the rule against inventing a fact holds
+  exactly as before — a stated cotton content that came from looking at a picture
+  is a returns problem and a legal one.
+
+If an image cannot be fetched, say so for that image and propose nothing for it.
+Never write alt text for a photo you did not see.
+
 Rules for the copy itself:
 
 - The voice comes from `store.md`. Not your defaults, not "premium quality".
