@@ -66,13 +66,13 @@ test('the writer no longer treats an empty field as the only alt problem', () =>
 });
 
 test('an alt that already says something is left alone', () => {
-  assert.match(writer(), /leave it alone/i);
+  assert.match(writer(), /leave it\s+alone/i);
 });
 
 test('the writer explains why a duplicate alt is the case worth fixing', () => {
   assert.match(
     writer(),
-    /same alt on every photo/i,
+    /same alt\s+on every photo/i,
     'without the reason, the next editor narrows this rule back to empty fields',
   );
 });

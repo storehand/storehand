@@ -28,6 +28,13 @@
 
 **No `scripts/` for this skill.** The audit compares strings and counts; the user's Claude does that directly. Nothing here needs a shipped executable.
 
+**Every text assertion in this plan must tolerate a line break.** These tests
+match against markdown that is hard-wrapped at 80 columns, so a phrase can be
+split anywhere. Write `/same alt\s+on every photo/i`, never
+`/same alt on every photo/i` — the second one passes or fails depending on where
+the paragraph happened to wrap, which is a test that measures formatting rather
+than meaning. Found the hard way in Task 3.
+
 ---
 
 ## Task 1: Measure the three open assumptions
