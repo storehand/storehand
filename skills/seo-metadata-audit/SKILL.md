@@ -106,3 +106,52 @@ or pick one fixed scratch path. An unset `V` turns `"$V/page.json"` into
 Progress lines and the CLI's error box both land on **stderr** while stdout
 stays empty, so `2>/dev/null` hides errors rather than noise. Check the exit
 code, and treat empty stdout as a failed call, never as a quiet result.
+
+## Step 3 — Judge, and place every finding on two axes
+
+Judge every product against `$CLAUDE_PLUGIN_ROOT/shared/metadata-rules.md`. Then
+place each finding by **severity** and by **visibility**, because a missing meta
+description on a product nobody can reach costs nothing, and putting it next to
+one on your best-selling page makes the report useless.
+
+**Visible** means `status` is `ACTIVE` **and** the product is reachable through
+at least one collection or menu path. Collections come back on the sweep query.
+For menu paths, reuse the health check's query:
+
+```bash
+printf '%s' '{"first":10}' > "$V/menus.json"
+shopify store execute --store <store> --json \
+  --query-file "$CLAUDE_PLUGIN_ROOT/skills/store-health-check/queries/menus-and-domain.graphql" \
+  --variable-file "$V/menus.json"
+```
+
+That needs the scope `read_online_store_navigation`, which a store connected
+before menus were ever queried will not have. On ACCESS_DENIED, **drop the
+visibility layer and say so in the report** — collections alone still tell you
+something, and the severity ladder collapses to its first axis. **Never assume a
+product is invisible because you could not check.** That turns one missing scope
+into a whole catalogue of low-priority findings, and the owner would have no way
+to tell that from a genuinely unreachable catalogue.
+
+A truncated `collections` list (`hasNextPage` true on that product) can only
+under-state visibility, never over-state it: a product already in one collection
+is visible whatever the eleventh one says. Treat it as visible and move on.
+
+| Severity | What lands here |
+|---|---|
+| **HEAVY** | An empty field on a visible product |
+| **MEDIUM** | A filled but weak field on a visible product — duplicate alt, `seo.title` identical to the product title, `seo.description` repeating the title |
+| **LIGHT** | Length problems: `seo.title` or `seo.description` past the threshold |
+| **Bottom of the report** | The same gaps on products reachable from nowhere. Counted, listed last, with the reason spelled out |
+
+### The finding no other skill may make
+
+`product-listing-writer` is forbidden from calling a title a duplicate, and says
+so itself: it sees ten products and has not seen the rest. You sweep the **whole
+catalogue**, so you can establish it. Products that share an identical title are
+your own MEDIUM finding, and you name the handles that collide.
+
+Make it carefully, because it is the one judgement nobody else can check:
+compare titles exactly, and **if the sweep stopped early for any reason, say the
+duplicate check is incomplete rather than reporting a number.** A duplicate
+count from a partial sweep is not a smaller truth, it is a different claim.

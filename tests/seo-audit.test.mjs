@@ -149,3 +149,32 @@ test('the audit sweeps the whole catalogue instead of stopping at a page', () =>
   assert.match(audit(), /keep paging/i);
   assert.match(audit(), /every other skill stops/i, 'say why this one is different');
 });
+
+// --- judging: severity, visibility, duplicate titles -----------------------
+
+test('severity is crossed with visibility', () => {
+  for (const level of [/HEAVY/, /MEDIUM/, /LIGHT/]) assert.match(audit(), level);
+  assert.match(audit(), /reachable through at least one collection or menu/i);
+});
+
+test('a missing menu scope drops the visibility layer out loud', () => {
+  assert.match(audit(), /read_online_store_navigation/);
+  // Positive, not an absence check: the prohibition itself contains the words
+  // a naive doesNotMatch would forbid.
+  assert.match(
+    audit(),
+    /never assume a product is invisible/i,
+    'a missing scope must not turn into a catalogue of low-priority findings',
+  );
+});
+
+test('duplicate titles are the finding only this skill may report', () => {
+  assert.match(audit(), /share an identical title/i, 'the finding must exist');
+  assert.match(audit(), /handles that collide/i, 'a count without the handles is not actionable');
+  assert.match(audit(), /whole catalogue/i, 'say why no other skill may make this call');
+  assert.match(
+    audit(),
+    /duplicate check is incomplete/i,
+    'a duplicate count from a partial sweep is a different claim, not a smaller one',
+  );
+});
