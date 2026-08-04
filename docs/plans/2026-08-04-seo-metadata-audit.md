@@ -964,6 +964,14 @@ git commit -m "docs: roadmap says what the audit actually does"
 
 ## Task 10: Two real runs
 
+> **Task 9 wrote a cheque this task has to cash.** The roadmap now reads
+> **Shipped** for skill 5, and the line directly above that table says a skill
+> earns that word only once it has run against a live store with the evidence in
+> `docs/dogfood/`. Until this task passes, that row is a claim ahead of its
+> evidence. **If the dogfood run turns up a blocker, set row 5 back to `Planned`
+> before anything is merged** — an unshipped skill marked Shipped is exactly the
+> kind of quiet untruth the rest of this repository is built to prevent.
+
 One run proves the sweep. Only a second run proves the difference count, and that is half of what makes this an audit.
 
 **Files:**

@@ -165,8 +165,15 @@ no app of your own.
 
 ## No telemetry
 
-StoreHand sends nothing anywhere. No usage pings, no prompts, no store data. The
-only network traffic is the Shopify CLI talking to your own store.
+StoreHand sends nothing anywhere. No usage pings, no prompts, no store data, and
+there is no StoreHand server for any of it to go to.
+
+The network traffic is the Shopify CLI talking to your own store, setup finishing
+its login on your own machine, the health check requesting your own storefront,
+and the listing writer fetching your own product images so it can describe what
+is in a photo rather than guess. That is the whole list, it is written down in
+[`shared/safety.md`](shared/safety.md), and a test checks it against what the
+skills actually declare.
 
 ---
 
@@ -186,8 +193,8 @@ does the talking. You can read every question it will ever ask your store.
 
 ## Roadmap
 
-Version 1 is setup plus six skills. **Setup and three of the six are shipped**;
-three are not written yet. A skill is only listed as shipped once it has run
+Version 1 is setup plus six skills. **Setup and four of the six are shipped**;
+two are not written yet. A skill is only listed as shipped once it has run
 against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 
 | # | Skill | What it does | Status |
@@ -197,7 +204,7 @@ against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 | 2 | `store-health-check` | Weekly audit, broken links, discount and metadata gaps | **Shipped** |
 | 3 | `product-listing-writer` | Titles, descriptions, SEO fields and alt text in your brand voice | **Shipped** |
 | 4 | `price-and-competitor-watch` | Follows a fixed list of competitor product pages and reports the gap against your margin rules | Planned |
-| 5 | `seo-metadata-audit` | Sweeps the whole catalogue for titles, meta descriptions and alt text that lag behind, and prepares the fixes | Planned |
+| 5 | `seo-metadata-audit` | Sweeps the whole catalogue, judges titles, meta descriptions and alt text, and orders what to fix first | **Shipped** |
 | 6 | `weekly-store-report` | Revenue, conversion and returning customers, with concrete actions | Planned |
 
 **Deliberately not in version 1:** customer-service chat and email, review
@@ -207,7 +214,7 @@ break the "no external services" promise this project runs on.
 
 ### Following along
 
-Three skills to go. Each one ships the same way: built, run against a real
+Two skills to go. Each one ships the same way: built, run against a real
 store, evidence in `docs/dogfood/`, and only then listed as shipped.
 
 - **Watch → Custom → Releases** tells you when one lands, and nothing else.

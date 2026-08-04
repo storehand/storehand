@@ -251,3 +251,32 @@ test('the promise names the image route and counts its own routes', () => {
   assert.match(s, /product images/i);
   assert.match(s, /exactly four ways/i);
 });
+
+// --- the README says what ships -------------------------------------------
+
+test('the roadmap no longer says the audit prepares the fixes', () => {
+  const r = flat(read('README.md'));
+  assert.doesNotMatch(r, /prepares the fixes/, 'the listing writer prepares them, not the audit');
+  assert.match(r, /`seo-metadata-audit`/);
+});
+
+test('the README network sentence matches the promise', () => {
+  const r = flat(read('README.md'));
+  assert.doesNotMatch(
+    r,
+    /only network traffic is the Shopify CLI talking to your own store/,
+    'that stopped being true when the listing writer started reading photos',
+  );
+  assert.match(r, /product images/i);
+});
+
+test('the shipped count matches the roadmap table', () => {
+  const r = read('README.md');
+  const shipped = [...r.matchAll(/^\| \d+ \| `[^`]+` \|[^|]*\| \*\*Shipped\*\* \|$/gm)].length;
+  assert.equal(shipped, 5, 'setup plus four skills are shipped');
+  assert.match(
+    flat(r),
+    /four of the six are shipped/i,
+    'the prose above the table must agree with the table',
+  );
+});
