@@ -1,0 +1,67 @@
+name: Something went wrong
+description: A skill did the wrong thing, stopped, or reported something that was not true
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        **Before you paste anything: no real store data.** Not a `*.myshopify.com`
+        handle, not a shop id, not a customer name or email, not an order number
+        you would rather not publish. Replace them with `your-store.myshopify.com`,
+        `#1042`, and so on. Issues are public and cannot be un-published.
+
+  - type: dropdown
+    id: skill
+    attributes:
+      label: Which skill
+      options:
+        - storehand-setup
+        - daily-store-briefing
+        - store-health-check
+        - product-listing-writer
+        - Not sure / something else
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What you expected, and what happened instead
+      description: One or two sentences is plenty.
+    validations:
+      required: true
+
+  - type: textarea
+    id: output
+    attributes:
+      label: The output
+      description: >
+        The command and what came back, with store details replaced. If a
+        `shopify store execute` call failed, its error box is the useful part —
+        it goes to stderr, so make sure it was not swallowed.
+      render: shell
+
+  - type: input
+    id: cli
+    attributes:
+      label: Shopify CLI version
+      description: "`shopify version`"
+      placeholder: "4.5.2"
+
+  - type: input
+    id: version
+    attributes:
+      label: StoreHand version
+      description: The `version` in `.claude-plugin/plugin.json`, or the commit you are on.
+      placeholder: "0.2.0"
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating system
+      options:
+        - macOS
+        - Linux
+        - Windows (WSL)
+        - Windows (native)
+        - Other

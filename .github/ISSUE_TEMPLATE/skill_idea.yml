@@ -1,0 +1,48 @@
+name: Skill idea
+description: A job you do in your Shopify admin that a skill could take over
+labels: ["skill idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        The useful version of this issue describes **a task you actually repeat**,
+        not a feature. "I check X every Monday and it takes twenty minutes" is
+        worth more than "add analytics".
+
+        Worth knowing before you write: version 1 deliberately leaves out
+        customer-service chat and email, review replies, email marketing and
+        social, discount campaign creation, and A/B testing. Each needs either
+        realtime infrastructure or a third-party platform, and both break the
+        "no external services" promise this project runs on.
+
+  - type: textarea
+    id: job
+    attributes:
+      label: What you do today
+      description: The clicks, the screens, how often, and roughly how long it takes.
+    validations:
+      required: true
+
+  - type: textarea
+    id: answer
+    attributes:
+      label: What a good answer looks like
+      description: >
+        If a skill did this for you, what would it put on screen? Rough shape is
+        fine — a headline, a table, a list of things to fix.
+    validations:
+      required: true
+
+  - type: dropdown
+    id: writes
+    attributes:
+      label: Would it need to change anything in the store?
+      description: >
+        StoreHand proposes, you approve — anything that writes has to go through
+        a file you read and edit first. Knowing this up front shapes the design.
+      options:
+        - "No — it only reads"
+        - "Yes — it would write to the store"
+        - "Not sure"
+    validations:
+      required: true
