@@ -53,7 +53,7 @@ body:
     attributes:
       label: StoreHand version
       description: The `version` in `.claude-plugin/plugin.json`, or the commit you are on.
-      placeholder: "0.2.0"
+      placeholder: "0.3.0"
 
   - type: dropdown
     id: os
