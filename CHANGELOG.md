@@ -9,19 +9,32 @@ Before 1.0 the shape of a skill's output is not a stable interface — the
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-04
+
 ### Fixed
 
 - **Skills no longer stop before they start.** All four told the reader to halt
-  if `$CLAUDE_PLUGIN_ROOT` was empty, and that variable is always empty in a
-  Bash tool call. A new Step 0 resolves the plugin directory over three routes
-  and verifies the winner before using it. Background in
-  `shared/plugin-root.md`, run notes in `docs/dogfood/`.
+  if `$CLAUDE_PLUGIN_ROOT` was empty — and that variable is always empty in a
+  Bash tool call, so following the instruction literally halted every skill at
+  step one on a correct installation. Exporting it once does not help either:
+  shell state does not survive between tool calls. Both measured, not assumed.
+- A new **Step 0** resolves the plugin directory over three routes — the
+  variable itself, `PATH`, then Claude Code's install register — and verifies
+  the winner actually contains `shared/api-version.md` before using it. Neither
+  fallback is a documented contract, so neither is trusted on its own.
+  Background in `shared/plugin-root.md`, run notes in
+  [`docs/dogfood/`](docs/dogfood/).
+
+**If you installed 0.2.0, update.** The plugin cache is keyed on the version
+number, so the fix does not reach an existing install on its own.
 
 ### Changed
 
 - Issue and pull request templates, a code of conduct, and this changelog.
 - `assets/` no longer carries a byte-identical duplicate of the wide logo or an
   unused export.
+- 130 tests, up from 121. Nine of them hold the four copies of the Step 0
+  snippet byte-identical and run it against a home directory with a space in it.
 
 ## [0.2.0] — 2026-08-03
 
@@ -73,6 +86,7 @@ Before 1.0 the shape of a skill's output is not a stable interface — the
   an impossible value, and a filter that is being ignored gives itself away.
 - Apache-2.0, a NOTICE, a CLA, and branch protection with CI as a required check.
 
-[Unreleased]: https://github.com/storehand/storehand/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/storehand/storehand/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/storehand/storehand/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/storehand/storehand/compare/v0.1.0...v0.2.0
 [0.1.0]: https://github.com/storehand/storehand/releases/tag/v0.1.0
