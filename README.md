@@ -8,6 +8,7 @@
 
 <p align="center">
   <a href="https://github.com/storehand/storehand/actions/workflows/ci.yml"><img src="https://github.com/storehand/storehand/actions/workflows/ci.yml/badge.svg" alt="CI status" /></a>
+  <a href="https://github.com/storehand/storehand/releases"><img src="https://img.shields.io/github/v/release/storehand/storehand?label=release&color=black" alt="Latest release" /></a>
   <img src="https://img.shields.io/badge/licence-Apache--2.0-black" alt="Apache-2.0 licence" />
   <img src="https://img.shields.io/badge/telemetry-none-black" alt="No telemetry" />
 </p>
@@ -103,6 +104,8 @@ It also refuses to be fooled by a store that answers 200 for pages that do not
 exist — it probes for that first, and says the link check measured nothing
 rather than reporting a clean bill of health.
 
+---
+
 ## StoreHand proposes, you approve
 
 Three of the four skills read your store and write nothing to it — not a
@@ -164,6 +167,8 @@ no app of your own.
 
 StoreHand sends nothing anywhere. No usage pings, no prompts, no store data. The
 only network traffic is the Shopify CLI talking to your own store.
+
+---
 
 ## Why another set of Claude skills for Shopify
 
@@ -236,3 +241,24 @@ Found a security issue? [SECURITY.md](SECURITY.md).
 ## Licence
 
 Apache-2.0. Not affiliated with Shopify Inc.
+
+---
+
+<p align="center">
+  <img src="https://raw.githubusercontent.com/storehand/storehand/refs/heads/main/assets/logo-mark.png" alt="" width="56" height="56" />
+</p>
+
+<p align="center">
+  <a href="#install">Install</a> ·
+  <a href="https://github.com/storehand/storehand/releases">Releases</a> ·
+  <a href="CHANGELOG.md">Changelog</a> ·
+  <a href="docs/dogfood/">Evidence</a> ·
+  <a href="CONTRIBUTING.md">Contributing</a> ·
+  <a href="SECURITY.md">Security</a> ·
+  <a href="https://storehand.github.io">Get notified</a>
+</p>
+
+<p align="center">
+  <sub><strong>An extra pair of hands for your store.</strong><br />
+  Apache-2.0 · Not affiliated with Shopify Inc. · No telemetry, no account, nothing running on someone else's server.</sub>
+</p>
