@@ -178,3 +178,36 @@ test('duplicate titles are the finding only this skill may report', () => {
     'a duplicate count from a partial sweep is a different claim, not a smaller one',
   );
 });
+
+// --- report, memory, and the count that will not match ---------------------
+
+test('the report explains why its counts differ from the health check', () => {
+  assert.match(audit(), /store-health-check/);
+  assert.match(audit(), /caps at 100/i, 'the owner will otherwise think something is broken');
+});
+
+test('a category that could not be measured is never counted as fixed', () => {
+  assert.match(audit(), /never counts as fixed/i);
+});
+
+test('the memory follows the shared-state contract', () => {
+  assert.match(audit(), /seoAudit/);
+  assert.match(audit(), /whole object/i, 'rebuilding state.json erases another skill memory');
+});
+
+test('a partial sweep never moves the marker', () => {
+  assert.match(audit(), /do not write `state\.json` at all/i);
+});
+
+test('the report ends by pointing at the skill that fixes things', () => {
+  assert.match(audit(), /product-listing-writer/);
+  assert.match(audit(), /an audit that ends without a next action/i);
+});
+
+test('a partial alt fix is shown as partial in the report', () => {
+  assert.match(
+    audit(),
+    /partially updated/i,
+    'images 1-3 fixed leaves the product flagged — say so or the work looks wasted',
+  );
+});

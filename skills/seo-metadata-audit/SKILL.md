@@ -155,3 +155,89 @@ Make it carefully, because it is the one judgement nobody else can check:
 compare titles exactly, and **if the sweep stopped early for any reason, say the
 duplicate check is incomplete rather than reporting a number.** A duplicate
 count from a partial sweep is not a smaller truth, it is a different claim.
+
+## Step 4 — Report
+
+```
+SEO audit — 412 products swept across 5 pages
+
+HEAVY    38 products with no seo.description        (was 55)
+         12 of them sit in a collection that is in your menu
+HEAVY     9 images with no alt text                 (was 9)
+MEDIUM  399 images carry the same alt as another image
+          on the same product                       (was 429)
+          10 products partially updated — images 1-3 fixed,
+          the rest still duplicated
+MEDIUM   17 seo.titles are the product title verbatim
+MEDIUM    4 products share a title with another product
+          nl-jas-kort / nl-jas-kort-2
+LIGHT    54 seo.titles past the threshold
+LIGHT     7 titles read like a stock code
+
+Bottom: 31 gaps on 14 products that sit in no collection and
+no menu. Fixing them pays nothing until they are reachable.
+
+Biggest win: the 12 in 'Jassen'.
+  → /storehand:product-listing-writer on collection jassen
+
+Nothing was written. This run was read-only from start to finish.
+```
+
+Rules for the shape:
+
+- Every category that ran gets a number, **including a zero**. A measured zero
+  is a result; a category missing from the list reads like a zero without being
+  one.
+- The `(was …)` column appears only for categories measured both this run and
+  last. Leave it off entirely on a first audit rather than printing a dash.
+- When `product-listing-writer` has fixed part of a product's images, say
+  **partially updated** and name the range. Images four and up keep their old
+  alt, so the product stays in the count — without that line the owner sees a
+  number that barely moved and concludes the work did nothing.
+- Close by naming the collection or tag with the densest cluster of HEAVY
+  findings and the exact `product-listing-writer` invocation for it. **An audit
+  that ends without a next action is a list**, and a list of 412 products is
+  what the owner already had.
+
+### Why your numbers differ from the health check
+
+`store-health-check` counts some of the same gaps, but it **caps at 100
+products** and it reports presence only, never quality. This skill sweeps
+everything and judges. Its numbers are legitimately higher, and they are not in
+conflict.
+
+**Say that in the report whenever a health check has run before.** An owner who
+reads 12 in one report and 38 in the other will assume one of them is broken,
+and the wrong conclusion is that the audit cannot be trusted.
+
+## Step 5 — Remember
+
+**Only after a successful report**, write `.storehand/state.json`: take the
+object from Step 1, replace only the `seoAudit` key with
+`{ "lastRunAt": "<now, ISO 8601 UTC>", "counts": { … } }`, and write the **whole
+object** back. A skill that rebuilds this file from scratch erases another
+skill's memory along with its own.
+
+A category that could not be measured this run **never counts as fixed**: carry
+the previous number forward and mark it not measured. Zero found and never
+looked at are indistinguishable in a difference count, and the difference count
+is half of what makes this an audit rather than a snapshot.
+
+If the sweep stopped early, **do not write `state.json` at all**. A marker moved
+after a partial sweep turns next week's "you fixed 17" into a fiction, and
+nobody will know which run introduced it.
+
+## Errors — never report a catalogue you did not sweep
+
+| Situation | What to do |
+|---|---|
+| `shopify` not found or older than 4.5 | Show the install or `shopify upgrade` step, stop |
+| Not authenticated / token expired | Show `shopify store auth --store <store> --scopes read_products,read_online_store_navigation`, stop |
+| ACCESS_DENIED on menus only | Drop the visibility layer, say so, continue on collections alone |
+| A page of the sweep fails | Report how far you got. Never present a partial sweep as a total |
+| `state.json` unparseable | Say so, run anyway, write nothing at the end |
+| A field does not exist (API version drift) | Show the error, name the query file, point at `$CLAUDE_PLUGIN_ROOT/shared/api-version.md` |
+| Step 0 printed `NOT FOUND` | Stop and tell the user to reinstall; never guess where plugin files are |
+
+A clean catalogue and a sweep that died on page one look identical in a report
+that hides its failures. Never let them.
