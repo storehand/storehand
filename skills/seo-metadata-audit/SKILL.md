@@ -183,6 +183,18 @@ Biggest win: the 12 in 'Jassen'.
 Nothing was written. This run was read-only from start to finish.
 ```
 
+### Check every number against what you swept, before you print it
+
+A category counted per product can never exceed the number of products swept. A
+category counted per image can never exceed the number of images. **If one does,
+the count is wrong — say so and do not print it as a finding.**
+
+This is not hypothetical: the first real run of this skill reported 76 products
+without a meta description on a catalogue of 42, because a product was being
+counted twice. The number looked alarming rather than impossible, which is
+exactly how a counting bug survives. One comparison against the total catches
+the whole class.
+
 Rules for the shape:
 
 - Every category that ran gets a number, **including a zero**. A measured zero

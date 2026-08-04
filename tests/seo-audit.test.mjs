@@ -280,3 +280,12 @@ test('the shipped count matches the roadmap table', () => {
     'the prose above the table must agree with the table',
   );
 });
+
+test('counts are checked against the size of the sweep before printing', () => {
+  assert.match(audit(), /can never exceed the number of products swept/i);
+  assert.match(
+    audit(),
+    /76 products without a meta description on a catalogue of 42/i,
+    'keep the real example — an impossible number that merely looks alarming',
+  );
+});
