@@ -313,8 +313,12 @@ there is nothing to approve.
 ## Step 9 — Write
 
 Only after an explicit yes. This is the one place in StoreHand that passes
-`--allow-mutations`, and it needs the `write_products` scope; a store connected
-with the read-only scopes will get ACCESS_DENIED here (see the Errors table).
+`--allow-mutations`. It needs **two** scopes, and they are not interchangeable:
+`write_products` for titles, descriptions and SEO, and `write_files` for alt
+text, because Shopify puts alt text behind `fileUpdate`. A store connected with
+only the read-only scopes gets ACCESS_DENIED on both; a store with
+`write_products` alone writes the text and fails on the alt text (measured
+2026-08-04). See the Errors table.
 
 Per product in `plan.apply`, when `productInput` is not empty:
 
@@ -400,7 +404,8 @@ the proposal file is the record.
 |---|---|
 | `shopify` not found or older than 4.5 | Show the install or `shopify upgrade` step, stop |
 | Not authenticated / token expired | Show the auth line from `storehand-setup`, stop |
-| ACCESS_DENIED on the mutation | The store is connected read-only. Show `shopify store auth --store <store> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation,write_products` and stop. Never retry without it |
+| ACCESS_DENIED on `productUpdate` | The store is connected read-only. Show `shopify store auth --store <store> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation,write_products,write_files` and stop. Never retry without it |
+| ACCESS_DENIED on `fileUpdate` only | The store has `write_products` but not `write_files`, which is where Shopify keeps alt text. The text fields were written and the alt text was not — say exactly that, per image, and show the same auth line. Never report the product as done |
 | The parser refuses the proposal | Show the message literally, stop, change nothing |
 | `store` in the proposal ≠ `store.yaml` | Stop — this proposal belongs to another store |
 | Re-fetch fails for any product | Stop before writing anything |

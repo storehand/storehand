@@ -302,3 +302,25 @@ test('every listing-writer query returns the image URL it tells you to fetch', (
     );
   }
 });
+
+test('a skill that calls fileUpdate names the scope fileUpdate actually needs', () => {
+  for (const [name, text] of skillFiles()) {
+    const dir = path.join(REPO, path.dirname(name).replace(/^skills\//, 'skills/'), 'mutations');
+    const callsFileUpdate =
+      /fileUpdate/.test(text) ||
+      (fs.existsSync(dir) &&
+        fs.readdirSync(dir).some((f) => /fileUpdate/.test(fs.readFileSync(path.join(dir, f), 'utf8'))));
+    if (!callsFileUpdate) continue;
+    assert.match(
+      flat(text),
+      /write_files/,
+      `${name} writes alt text through fileUpdate, which needs write_files — ` +
+        'write_products is not enough (measured against a live store, 2026-08-04)',
+    );
+  }
+});
+
+test('the setup skill asks for both write scopes, not just one', () => {
+  const setup = flat(read('skills/storehand-setup/SKILL.md'));
+  assert.match(setup, /write_products,write_files/);
+});

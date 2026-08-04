@@ -155,7 +155,7 @@ the five read-only scopes is the safer resting state, and every other skill
 works without it.
 
 ```bash
-shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation,write_products
+shopify store auth --store <domain> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation,write_products,write_files
 ```
 
 Say what it does and does not buy them:
