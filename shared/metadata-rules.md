@@ -16,6 +16,7 @@ inside a skill.
 | `seo.title` | Empty · or longer than **60** characters · or identical to the product title |
 | `seo.description` | Empty · or longer than **155** characters · or it repeats the product title |
 | `image.alt` | Empty or null · or identical to the alt of another image on the same product · or equal to the vendor or brand name and nothing more · or a filename (`IMG_2831`, `DSC_0042.jpg`) |
+| any text field | **Not in the store's language**, as declared by `language` in `.storehand/store.yaml` |
 | `title` | Reads like a stock code rather than a name · or says nothing a buyer would search for · or is identical to another product's title |
 
 The two length numbers are where search engines start truncating, so a value

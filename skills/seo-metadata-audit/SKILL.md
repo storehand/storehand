@@ -144,6 +144,22 @@ is visible whatever the eleventh one says. Treat it as visible and move on.
 | **LIGHT** | Length problems: `seo.title` or `seo.description` past the threshold |
 | **Bottom of the report** | The same gaps on products reachable from nowhere. Counted, listed last, with the reason spelled out |
 
+### Text in the wrong language
+
+`.storehand/store.yaml` declares `language`. Any `seo.title`, `seo.description`
+or `image.alt` that is **not in the store's language** is a MEDIUM finding on a
+visible product, whatever else is right about it.
+
+This is not a style preference. A store importing from a foreign supplier
+inherits that supplier's language in exactly the fields nobody reads — measured
+on a live Dutch store where all 429 image alts were the supplier's English
+product name. It is invisible in the admin, it is what a screen reader announces,
+and it is what a search engine indexes.
+
+Report it as its own line with a count, and name the field. Do not try to judge
+it when `language` is missing from the profile: say the check did not run and
+point at `storehand-setup`.
+
 ### The finding no other skill may make
 
 `product-listing-writer` is forbidden from calling a title a duplicate, and says

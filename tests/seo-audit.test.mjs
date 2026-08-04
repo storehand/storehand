@@ -324,3 +324,35 @@ test('the setup skill asks for both write scopes, not just one', () => {
   const setup = flat(read('skills/storehand-setup/SKILL.md'));
   assert.match(setup, /write_products,write_files/);
 });
+
+// --- the store language is declared, never inferred ------------------------
+
+test('the profile documents a required language key', () => {
+  const doc = flat(read('shared/store-profile.md'));
+  assert.match(doc, /\| `language` \|/, 'language belongs in the required-keys table');
+  assert.match(read('templates/storehand/store.yaml'), /^language:/m);
+});
+
+test('setup asks for the language instead of guessing it', () => {
+  assert.match(flat(read('skills/storehand-setup/SKILL.md')), /language/i);
+});
+
+test('the writer takes the language from the profile, not from what it finds', () => {
+  const s = writer();
+  assert.doesNotMatch(
+    s,
+    /Write in the language the existing listings are in/,
+    'that rule keeps a supplier’s English alt text English forever',
+  );
+  assert.match(s, /`language` in the store profile/i);
+});
+
+test('text in another language than the store is a rule, not a hunch', () => {
+  assert.match(rules(), /not in the store's language/i);
+  assert.match(audit(), /not in the store's language/i);
+});
+
+test('a profile without a language is asked about, never guessed at', () => {
+  assert.match(writer(), /older profile created before that key existed/i);
+  assert.match(audit(), /say the check did not run/i);
+});

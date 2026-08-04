@@ -8,6 +8,11 @@ store: your-store.myshopify.com
 timezone: Europe/Amsterdam
 currency: EUR
 
+# The language your store sells in (ISO code: nl, en, de, ...).
+# Everything StoreHand writes uses this, and text it finds in another language
+# is reported as a finding rather than quietly copied.
+language: nl
+
 inventory:
   # A variant at or below this quantity shows up as an alert.
   low_stock_threshold: 5

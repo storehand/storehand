@@ -68,9 +68,19 @@ Ask these one at a time. Do not fill in guesses.
    it). If they give a custom domain, ask again for the myshopify one.
 2. Timezone and currency. Offer a sensible guess based on the domain or their
    language and let them confirm.
-3. The low-stock threshold: "below how many items do you want a warning?"
-4. The minimum margin percentage StoreHand must never price below. If they don't
-   know, say so in the profile as a comment rather than inventing a number.
+3. **The language the store sells in**, as an ISO code (`nl`, `en`, `de`).
+   Offer a guess from the domain and let them confirm — but get an answer, do
+   not leave it blank. Everything StoreHand writes goes in this language, and
+   text it finds in another one becomes a finding.
+
+   Ask it even when the answer looks obvious. A store importing from a foreign
+   supplier is full of the supplier's language, so a skill that copied "whatever
+   is already there" would keep writing it — measured on a live Dutch store
+   carrying 429 English alt texts.
+4. The low-stock threshold: "below how many items do you want a warning?"
+5. The minimum margin percentage StoreHand must never price below. **Optional
+   and not read by any shipped skill yet** — if they don't know, leave it null
+   rather than inventing a number.
 
 ## Step 4 — Write the profile
 

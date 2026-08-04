@@ -56,6 +56,11 @@ Read `.storehand/store.yaml`: you need `store`. Read `.storehand/store.md` in
 full — that is the brand voice, and it is the only source for how the copy
 should sound. No `.storehand/`? Point the user at `storehand-setup` and stop.
 
+`store.yaml` must name a `language`. An older profile created before that key
+existed will not have one: **ask for it and offer to add it to the profile, do
+not infer it from the products.** The store you are looking at may be full of a
+supplier's language, and copying that is how it stays.
+
 If `store.md` says nothing about voice, audience or house style, **ask before
 writing a word.** Copy invented from a blank profile is copy in your voice, not
 the store's, and the owner will have to rewrite all of it.
@@ -201,7 +206,11 @@ Rules for the copy itself:
   a fact you do not have, leave a plain `[?]` in the text and say in the report
   which products carry one. A confident invented fabric composition is a returns
   problem and a legal one.
-- Write in the language the existing listings are in.
+- Write in the language named by `language` in the store profile. **Not the
+  language of what is already there.** On a store importing from a foreign
+  supplier, the existing alt text and titles are in the supplier's language, and
+  "match what is there" would keep them that way forever — measured on a live
+  Dutch store carrying 429 English alt texts.
 - Do not propose a field whose current value is already good. An unchanged
   proposal is noise in a file the owner has to read line by line.
 
