@@ -328,8 +328,18 @@ test('looking at a photo is measuring; deducing from it is not', () => {
   assert.match(s, /fabric|composition/i, 'name the thing that must never be deduced from a photo');
 });
 
-test('photo reading is capped with the product cap, not left open', () => {
-  assert.match(writer(), /same 10 products/i);
+test('photo reading is capped per product and per round', () => {
+  const s = writer();
+  assert.match(s, /3 images per product/i);
+  assert.match(s, /30 images (in total|per round)/i);
+});
+
+test('a partial fix is reported as partial', () => {
+  assert.match(
+    writer(),
+    /say which images you covered/i,
+    'photos 4 and up keep their duplicate alt — the audit will still flag the product',
+  );
 });
 ```
 
@@ -352,9 +362,19 @@ image URL comes back on the `MediaImage` node.
 curl -s -o "$V/img-1.jpg" "<image.url from the query>"
 ```
 
-Then read the file and describe what is actually in it. This stays inside the
-**same 10 products** cap as the rest of the run — a few dozen photos, not a few
-hundred.
+Then read the file and describe what is actually in it.
+
+**Two caps, and they are on images, not on products: at most 3 images per
+product, and at most 30 images in the whole round.** Measured on a live store on
+2026-08-04: the median product carries 9 images and the busiest carries 20, so
+"ten products" is anywhere between 50 and 200 images. A cap that varies fourfold
+depending on which products came back is not a cap. The first three images are
+what a shopper sees on a listing and product page, so that is where the value is.
+
+**Say which images you covered.** Images four and up keep their old alt text, so
+the audit will still flag that product — report "images 1–3 updated" rather than
+implying the product is done. Work that looks like it achieved nothing is worse
+than work not done.
 
 Two rules, and they are the difference between an alt text that helps and one
 that misleads:
@@ -688,8 +708,10 @@ SEO audit — 412 products swept across 5 pages
 HEAVY    38 products with no seo.description        (was 55)
          12 of them sit in a collection that is in your menu
 HEAVY     9 images with no alt text                 (was 9)
-MEDIUM  429 images carry the same alt as another image
-          on the same product
+MEDIUM  399 images carry the same alt as another image
+          on the same product                            (was 429)
+          10 products partially updated — images 1-3 fixed,
+          the rest still duplicated
 MEDIUM   17 seo.titles are the product title verbatim
 MEDIUM    4 products share a title with another product
           nl-jas-kort / nl-jas-kort-2
