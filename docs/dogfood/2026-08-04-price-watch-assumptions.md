@@ -139,7 +139,76 @@ decision is worth writing down rather than inheriting by accident: a shop owner
 who commits it to a public repository is publishing that analysis. The skill
 should say so once, when it first writes the file.
 
+## 4. The reading route, measured properly — and the verdict reversed
+
+The section above closed with "the design stands". **That was wrong, and it was
+wrong in the direction of wanting it to work.** At that point there had been four
+read attempts and four failures, and the write-up treated that as nuance instead
+of as the result. Pushed on it, the real measurement followed.
+
+### Nine attempts through `WebFetch`: one success
+
+| Target | Result |
+|---|---|
+| Large sports retailer, product page | 403 |
+| Large fashion marketplace, category | timeout |
+| Shopify shop A, product page (×2) | 429 |
+| Own Shopify store, product page (×2) | 429 |
+| DTC shop on Magento, category | **read — 3 products, prices, including one sale price** |
+| DTC shop, unknown platform | 403 |
+| Shopify DTC shop, category | 200, **no prices in the content** (rendered in-browser) |
+
+**One success in nine, and zero on Shopify** — the platform the design was
+betting on. A third failure mode appeared too: a page that loads fine and simply
+contains no price, because the shop renders it client-side.
+
+### A real browser reads what `WebFetch` cannot
+
+Headless Chromium, local, currency-agnostic, on hosts not hit earlier:
+
+| Target | Result |
+|---|---|
+| Shopify DTC shop (client-rendered) | 200 — **18 prices** |
+| DTC shop on Magento | 200 — **15 prices** |
+| Large sports retailer | 403 — hard bot protection, respected |
+
+An earlier run of this same test appeared to fail on all three. That run was
+wrong for three reasons, all mine: a euro-only price pattern against a shop
+pricing in dollars, a self-inflicted rate limit from hammering the same host all
+day, and another guessed URL that 404'd. **Guessed URLs were the single largest
+source of false failures in this whole exercise** — worth remembering, because
+the skill will be guessing URLs too.
+
+### What actually decides it
+
+The difference is not the tool, it is the address it comes from and whether it
+runs a real rendering engine. `WebFetch` is a server-side fetcher on datacenter
+addresses that Shopify throttles hard. A browser on the shop owner's own machine
+is an ordinary visitor.
+
+So: **the mechanism works, and it needs a real browser on the user's machine.**
+That is a dependency the design does not have and cannot quietly acquire.
+
+### Anti-detect browsers: considered and rejected
+
+Camoufox — an anti-detect Firefox that spoofs user agent, WebDriver status,
+platform, WebGL and audio fingerprints — would very likely read the shops that
+block everything else. It is rejected, because design §6 already settled this: a
+block is an answer, not an obstacle. Spoofing a fingerprint to get past a refusal
+is the one thing this project promised not to do, and the shops doing the
+refusing are the large retailers, which are not the comparable competitors for a
+small merchant anyway. It would trade the product's only real differentiator for
+access to the segment that matters least. It also would not help with the 429s,
+which are volume-based, not fingerprint-based.
+
 ## Verdict
 
-Task 1 does not block Task 2. The design stands, with one rule added (429
-handling and pacing) and one expectation corrected (`WebFetch` is not a browser).
+**Skill #4 is parked** (decision by Steffano, 2026-08-04). Not because the idea
+is wrong, but because the reading route the design assumed does not work, and the
+route that does work adds a browser dependency that deserves its own design round
+rather than being bolted on.
+
+Task 1 did exactly what it was for: it killed a load-bearing assumption before a
+line of the skill was written. Everything measured here is the starting point for
+that next round — the price fields, the `"0.00"` trap, the route comparison, and
+the three failure modes a reader has to distinguish.
