@@ -132,15 +132,20 @@ that gets applied unread.
 
 ## Step 4 — Write the copy
 
+Read `$CLAUDE_PLUGIN_ROOT/shared/metadata-rules.md` first — it holds the
+thresholds this table refers to, and it is the only place they live. The audit
+skill judges against exactly the same file, so a value you accept here is a
+value it will not flag.
+
 For each product, write a proposal for **only** the fields that need one:
 
 | Field | Write one when |
 |---|---|
-| `title` | The current title reads like a stock code rather than a name, is identical to another title **in this selection**, or says nothing a buyer would search for. Judge only what the query returned: no query fetches variant SKUs, and you have not seen the rest of the catalogue, so never claim a title "is the SKU" or "is a duplicate" as fact. A good title is rarely worth touching — say so and leave it |
+| `title` | It breaks a rule in `shared/metadata-rules.md`. But judge only what the query returned: no query fetches variant SKUs, and you have not seen the rest of the catalogue, so **never claim a title "is the SKU" or "is a duplicate" as fact** — that last one is the audit skill's finding, not yours. A good title is rarely worth touching — say so and leave it |
 | `description` | The description is empty, or is spec-dump prose with no reason to buy. Output HTML, because the field is `descriptionHtml` |
-| `seo.title` | Empty, or a copy of the product title beyond ~60 characters |
-| `seo.description` | Empty, or over ~155 characters, or it repeats the title |
-| `image.alt` | Empty or null. One proposal per `MediaImage` node, each with its own media id |
+| `seo.title` | It breaks a rule in `shared/metadata-rules.md` |
+| `seo.description` | It breaks a rule in `shared/metadata-rules.md` |
+| `image.alt` | It breaks a rule in `shared/metadata-rules.md`. One proposal per `MediaImage` node, each with its own media id. An alt that already describes this particular photo is fine — **leave it alone** |
 
 Rules for the copy itself:
 
