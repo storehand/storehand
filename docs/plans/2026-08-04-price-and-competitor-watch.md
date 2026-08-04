@@ -538,10 +538,19 @@ another route, do not use a browser to get past a refusal you already received.
 This project's entire promise is that it does not lie about what it measured;
 it does not get to lie to the neighbours either.
 
-**If you cannot reach the web at all** — no fetch tool, a denied permission, or
-every request failing the same way — stop and say exactly that. **Never report
-"no competitors found"** when the truth is that nothing was searched. Those two
-outcomes look identical in a report and mean opposite things.
+**Expect a large unreadable pile, and say so before you show it.** Measured on
+2026-08-04: five of eight mainstream retailers refuse automated reading — the
+large marketplaces and department stores — and the search step surfaces those
+first because they rank. Small and mid-sized shops mostly do answer, and those
+are the comparable competitors anyway. Open the report with the ratio — "found
+14, could read 5" — so an honest result does not read as a broken one.
+
+**If you cannot search or cannot fetch at all** — the tool is missing, a
+permission was denied, or every request fails the same way — stop and say exactly
+that. **Never report "no competitors found"** when the truth is that nothing was
+searched. Those two outcomes look identical in a report and mean opposite things.
+Web search is not guaranteed to exist for every user, so treat its absence as a
+reportable state, not as an empty result.
 
 ## Step 5 — Propose the list
 
@@ -607,6 +616,23 @@ test('an unread URL keeps its previous reading and its old date', () => {
   assert.match(skill(), /keeps its previous reading/i);
 });
 
+test('a sale needs a compare-at price strictly above the price', () => {
+  const s = skill();
+  assert.match(
+    s,
+    /strictly greater than/i,
+    'measured 2026-08-04: compareAtPrice comes back "0.00", not null — 356 of 356 variants',
+  );
+  assert.match(s, /"0\.00"/, 'the zero case must be named, not left to judgement');
+});
+
+test('a 429 is not read, and the reads are paced', () => {
+  const s = skill();
+  assert.match(s, /429/);
+  assert.match(s, /never a price/i);
+  assert.match(s, /one at a time|pace/i);
+});
+
 test('the tax assumption is stated in the report, not hidden', () => {
   assert.match(
     skill(),
@@ -666,10 +692,23 @@ one of exactly three outcomes:
 **Which price is compared.** The lowest variant price on both sides — that is
 what a shopper sees on a listing page — and the report says so.
 
-**Sale prices.** A strike-through price means the number you read is temporary.
-Record both and report them together: "€24.95 (on sale, normally €34.95)". A
-competitor running a weekend promotion is not structurally cheaper, and chasing
-one is how a store prices itself down for nothing.
+**Sale prices — and the trap in them.** A strike-through price means the number
+you read is temporary. Record both and report them together: "€24.95 (on sale,
+normally €34.95)". A competitor running a weekend promotion is not structurally
+cheaper, and chasing one is how a store prices itself down for nothing.
+
+A product counts as on sale **only when the compare-at price parses as a number
+strictly greater than the price.** `null`, `"0.00"`, and anything equal to or
+below the price all mean: not on sale. Measured on 2026-08-04 against a live
+store — `compareAtPrice` came back `"0.00"` on **356 of 356 variants**, never
+`null`. "Is a compare-at price set?" is therefore the wrong question: it is true
+for every product on such a store, and the report would announce a sale on all of
+them and print "normally €0.00".
+
+**Pace the reads, and read one page at a time.** Shopify's edge rate-limits, and
+a run that opens a dozen competitor pages back to back trips it — measured, with
+`Retry-After: 60`. A **429 is never a price and never "unchanged"**: it goes
+under **Not read** with its reason and is tried again next run.
 
 **Currency.** Record it. If it differs from `storeCurrency`, **do not convert** —
 that needs a rate that is different tomorrow, and a report should not contain a
