@@ -111,3 +111,41 @@ test('a partial fix is reported as partial', () => {
     'images 4 and up keep their old alt — the audit will still flag the product',
   );
 });
+
+// --- the audit: query, front matter, sweep ---------------------------------
+
+const audit = () => flat(read('skills/seo-metadata-audit/SKILL.md'));
+const auditRaw = () => read('skills/seo-metadata-audit/SKILL.md');
+
+test('the audit query paginates and is read-only', () => {
+  const q = read('skills/seo-metadata-audit/queries/catalogue-metadata.graphql');
+  assert.match(q, /\$after: String/, 'the sweep needs a cursor');
+  assert.match(q, /endCursor/);
+  assert.doesNotMatch(q, /\bmutation\b/i);
+});
+
+/** Every fenced code block in a markdown file, contents only. */
+const codeBlocks = (text) =>
+  [...text.matchAll(/```[a-z]*\n([\s\S]*?)```/g)].map((m) => m[1]);
+
+test('the audit declares itself read-only and asks for no write scope', () => {
+  // raw: front matter is line structure, not prose
+  assert.match(auditRaw(), /^---\nname: seo-metadata-audit\n/);
+  assert.match(audit(), /Use when/);
+  assert.doesNotMatch(audit(), /write_products/, 'a read-only skill needs no write scope');
+
+  // Naming the flag in a prohibition is the point; running it is the problem.
+  assert.match(audit(), /never add `--allow-mutations`/i, 'say the rule out loud');
+  for (const block of codeBlocks(auditRaw())) {
+    assert.doesNotMatch(
+      block,
+      /--allow-mutations/,
+      'a command in this skill passes --allow-mutations',
+    );
+  }
+});
+
+test('the audit sweeps the whole catalogue instead of stopping at a page', () => {
+  assert.match(audit(), /keep paging/i);
+  assert.match(audit(), /every other skill stops/i, 'say why this one is different');
+});

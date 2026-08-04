@@ -1,0 +1,55 @@
+# The whole catalogue's metadata, one page at a time. Read-only.
+#
+# This is the only StoreHand query meant to be called repeatedly with a cursor.
+# The audit judges the entire catalogue, so stopping at the first page would
+# silently under-report — and an under-report that looks like a total is the
+# failure this skill exists to avoid. Pass `after` as the previous page's
+# `endCursor`.
+#
+# `collections` rides along because the severity ladder needs to know whether a
+# product is reachable at all; a gap on a product nobody can visit costs
+# nothing. Its own `hasNextPage` matters: a product in more than 10 collections
+# is still visible, so a truncated list can only ever under-state visibility,
+# never over-state it.
+#
+# The filter narrows, it does not guarantee. Re-check `status` on every record
+# before reporting it.
+query CatalogueMetadata($first: Int!, $after: String) {
+  products(first: $first, after: $after) {
+    nodes {
+      id
+      title
+      handle
+      status
+      vendor
+      seo {
+        title
+        description
+      }
+      media(first: 20) {
+        nodes {
+          ... on MediaImage {
+            id
+            alt
+          }
+        }
+        pageInfo {
+          hasNextPage
+        }
+      }
+      collections(first: 10) {
+        nodes {
+          handle
+          title
+        }
+        pageInfo {
+          hasNextPage
+        }
+      }
+    }
+    pageInfo {
+      hasNextPage
+      endCursor
+    }
+  }
+}
