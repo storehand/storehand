@@ -9,6 +9,8 @@ Two phases, and they never run in one breath. **Propose** reads the store and
 writes a file you edit. **Apply** writes to the store, and only the fields you
 left in that file that nobody touched in the admin meanwhile.
 
+Network: your own store's product images (route 4 in shared/safety.md)
+
 **Two kinds of path, do not mix them up.** Files belonging to this plugin —
 `shared/*.md`, `queries/`, `mutations/`, `scripts/` — live under the plugin's
 install directory. The store profile and the proposals (`.storehand/`) live in
@@ -53,6 +55,11 @@ Read `$CLAUDE_PLUGIN_ROOT/shared/safety.md` and
 Read `.storehand/store.yaml`: you need `store`. Read `.storehand/store.md` in
 full — that is the brand voice, and it is the only source for how the copy
 should sound. No `.storehand/`? Point the user at `storehand-setup` and stop.
+
+`store.yaml` must name a `language`. An older profile created before that key
+existed will not have one: **ask for it and offer to add it to the profile, do
+not infer it from the products.** The store you are looking at may be full of a
+supplier's language, and copying that is how it stays.
 
 If `store.md` says nothing about voice, audience or house style, **ask before
 writing a word.** Copy invented from a blank profile is copy in your voice, not
@@ -132,15 +139,64 @@ that gets applied unread.
 
 ## Step 4 — Write the copy
 
+Read `$CLAUDE_PLUGIN_ROOT/shared/metadata-rules.md` first — it holds the
+thresholds this table refers to, and it is the only place they live. The audit
+skill judges against exactly the same file, so a value you accept here is a
+value it will not flag.
+
 For each product, write a proposal for **only** the fields that need one:
 
 | Field | Write one when |
 |---|---|
-| `title` | The current title reads like a stock code rather than a name, is identical to another title **in this selection**, or says nothing a buyer would search for. Judge only what the query returned: no query fetches variant SKUs, and you have not seen the rest of the catalogue, so never claim a title "is the SKU" or "is a duplicate" as fact. A good title is rarely worth touching — say so and leave it |
+| `title` | It breaks a rule in `shared/metadata-rules.md`. But judge only what the query returned: no query fetches variant SKUs, and you have not seen the rest of the catalogue, so **never claim a title "is the SKU" or "is a duplicate" as fact** — that last one is the audit skill's finding, not yours. A good title is rarely worth touching — say so and leave it |
 | `description` | The description is empty, or is spec-dump prose with no reason to buy. Output HTML, because the field is `descriptionHtml` |
-| `seo.title` | Empty, or a copy of the product title beyond ~60 characters |
-| `seo.description` | Empty, or over ~155 characters, or it repeats the title |
-| `image.alt` | Empty or null. One proposal per `MediaImage` node, each with its own media id |
+| `seo.title` | It breaks a rule in `shared/metadata-rules.md` |
+| `seo.description` | It breaks a rule in `shared/metadata-rules.md` |
+| `image.alt` | It breaks a rule in `shared/metadata-rules.md`. One proposal per `MediaImage` node, each with its own media id. An alt that already describes this particular photo is fine — **leave it alone** |
+
+The commonest real alt-text problem is not an empty field, it is the **same alt
+on every photo** of a product — usually the product title, repeated. Measured on
+a live store: 429 of 429 images, and not one empty field. Photo one and photo
+six then say the same thing, while photo six is a close-up of the hem. That is
+the case worth fixing, and a rule that only fires on empty fields would have
+repaired nothing at all on that store.
+
+### Alt text: look at the photo
+
+For every image you are proposing alt text for, fetch it and look at it. The URL
+comes back on the `MediaImage` node.
+
+```bash
+curl -s -o "$V/img-1.jpg" "<image.url from the query>"
+```
+
+Then read that file and describe what is actually in it.
+
+**Two caps, and they are on images, not on products: at most 3 images per
+product, and at most 30 images in the whole round.** Measured on a live store on
+2026-08-04: the median product carries 9 images and the busiest carries 20, so
+"ten products" is anywhere between 50 and 200 images. A cap that varies fourfold
+depending on which products came back is not a cap. The first three images are
+what a shopper sees on a listing and a product page, so that is where the value
+is.
+
+**Say which images you covered.** Images four and up keep their old alt text, so
+an audit will still flag that product — report "images 1–3 updated" rather than
+implying the product is done. Work that looks like it achieved nothing is worse
+than work not done.
+
+Two rules decide whether the result helps or misleads:
+
+- **Describe the product, not the model.** "Woman with curly hair" helps nobody
+  searching for this garment or hearing the page read aloud. The garment is the
+  subject; the person wearing it is not.
+- **Only what is visible.** Looking at a photo is measuring. Deducing fabric or
+  composition from one is inventing, and the rule against inventing a fact holds
+  exactly as before — a stated cotton content that came from looking at a picture
+  is a returns problem and a legal one.
+
+If an image cannot be fetched, say so for that image and propose nothing for it.
+Never write alt text for a photo you did not see.
 
 Rules for the copy itself:
 
@@ -150,7 +206,11 @@ Rules for the copy itself:
   a fact you do not have, leave a plain `[?]` in the text and say in the report
   which products carry one. A confident invented fabric composition is a returns
   problem and a legal one.
-- Write in the language the existing listings are in.
+- Write in the language named by `language` in the store profile. **Not the
+  language of what is already there.** On a store importing from a foreign
+  supplier, the existing alt text and titles are in the supplier's language, and
+  "match what is there" would keep them that way forever — measured on a live
+  Dutch store carrying 429 English alt texts.
 - Do not propose a field whose current value is already good. An unchanged
   proposal is noise in a file the owner has to read line by line.
 
@@ -262,8 +322,12 @@ there is nothing to approve.
 ## Step 9 — Write
 
 Only after an explicit yes. This is the one place in StoreHand that passes
-`--allow-mutations`, and it needs the `write_products` scope; a store connected
-with the read-only scopes will get ACCESS_DENIED here (see the Errors table).
+`--allow-mutations`. It needs **two** scopes, and they are not interchangeable:
+`write_products` for titles, descriptions and SEO, and `write_files` for alt
+text, because Shopify puts alt text behind `fileUpdate`. A store connected with
+only the read-only scopes gets ACCESS_DENIED on both; a store with
+`write_products` alone writes the text and fails on the alt text (measured
+2026-08-04). See the Errors table.
 
 Per product in `plan.apply`, when `productInput` is not empty:
 
@@ -349,7 +413,8 @@ the proposal file is the record.
 |---|---|
 | `shopify` not found or older than 4.5 | Show the install or `shopify upgrade` step, stop |
 | Not authenticated / token expired | Show the auth line from `storehand-setup`, stop |
-| ACCESS_DENIED on the mutation | The store is connected read-only. Show `shopify store auth --store <store> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation,write_products` and stop. Never retry without it |
+| ACCESS_DENIED on `productUpdate` | The store is connected read-only. Show `shopify store auth --store <store> --scopes read_orders,read_products,read_inventory,read_discounts,read_online_store_navigation,write_products,write_files` and stop. Never retry without it |
+| ACCESS_DENIED on `fileUpdate` only | The store has `write_products` but not `write_files`, which is where Shopify keeps alt text. The text fields were written and the alt text was not — say exactly that, per image, and show the same auth line. Never report the product as done |
 | The parser refuses the proposal | Show the message literally, stop, change nothing |
 | `store` in the proposal ≠ `store.yaml` | Stop — this proposal belongs to another store |
 | Re-fetch fails for any product | Stop before writing anything |

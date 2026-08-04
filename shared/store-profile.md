@@ -26,6 +26,7 @@ Machine-readable settings. Required keys:
 | `store` | The `*.myshopify.com` domain |
 | `timezone` | IANA timezone, e.g. `Europe/Amsterdam` — decides where "today" starts |
 | `currency` | ISO code used in reports |
+| `language` | The language the store sells in, as an ISO code (`nl`, `en`, `de`). **Everything StoreHand writes is written in this language, and anything it finds in another one is a finding.** Declared here on purpose: inferring it from what is already in the store keeps a supplier's English product names English forever |
 | `inventory.low_stock_threshold` | A variant at or below this count is an alert |
 | `pricing.min_margin_percent` | Never propose a price below this margin |
 | `competitors` | List of URLs for the price watch skill; may be empty |

@@ -54,7 +54,27 @@ Thresholds, margins and house rules come from `.storehand/store.yaml` and
 `.storehand/store.md`. Do not substitute your own judgement for a number the
 owner set. If a needed value is missing from the profile, ask.
 
-## Privacy
+## Privacy and network
 
-StoreHand sends no telemetry and makes no network calls other than the Shopify
-CLI talking to the user's own store. Do not add any.
+StoreHand sends no telemetry and has no server of its own. Nothing you run here
+reports back to anyone.
+
+Skills reach the network in exactly four ways, and no others:
+
+1. the Shopify CLI talking to your own store — every skill, and nothing else for
+   most of them;
+2. `storehand-setup` completing the authentication callback on your own machine;
+3. `store-health-check` requesting your own storefront, to see which links
+   really answer;
+4. `product-listing-writer` fetching your own store's product images from
+   Shopify's CDN, so it can describe what is actually in a photo instead of
+   guessing at it.
+
+Route 2 is not new behaviour — setup has always done it — but this list claimed
+to be complete and was not. That is the failure mode a hand-maintained promise
+has, so it is no longer hand-maintained alone: every skill states its own
+traffic in a `Network:` line near the top, and a test checks those lines against
+this list.
+
+Anything beyond these four changes the promise rather than implementing it. Do
+not add one — and if you do, it goes in this list in the same commit.

@@ -84,7 +84,7 @@ not, [leave your email](https://storehand.github.io) — see
 | `storehand-setup` | Builds your store profile and connects the store | No — local files only |
 | `daily-store-briefing` | Morning briefing: new orders, failed payments, cancellations, refunds, low-stock alerts | No — local files only |
 | `store-health-check` | Weekly audit: sold-out-but-active products, discount windows, broken storefront links, missing SEO metadata | No — local files only |
-| `product-listing-writer` | Product titles, descriptions, SEO fields and image alt text in your own voice — proposed in a file you edit, applied only on a separate command | Yes — only what you approved, and only with `write_products` |
+| `product-listing-writer` | Product titles, descriptions, SEO fields and image alt text in your own voice — proposed in a file you edit, applied only on a separate command | Yes — only what you approved. Titles, descriptions and SEO need `write_products`; alt text needs `write_files` as well |
 
 "Local files only" means `.storehand/` in your own directory — the profile, a
 timestamp so tomorrow's briefing knows where to start, and the health check's
@@ -92,7 +92,7 @@ memory of what it found last time.
 
 Every skill has run against a live store before being called shipped, and the
 run is written up in [`docs/dogfood/`](docs/dogfood/) — the commands, the real
-output, and what was awkward about it. The repository carries 130 tests.
+output, and what was awkward about it. The test suite runs on every push; the badge above says whether it is green.
 
 The weekly check is the one that finds things nobody is looking for. It fetches
 your storefront over HTTP rather than trusting the admin, so a link that exists
@@ -140,14 +140,18 @@ meanwhile, two because they still carried blanks the copy could not fill without
 inventing a fact. Re-running the same file is safe: anything already written
 comes back as already-applied and is not written twice.
 
-Without the `write_products` scope the skill still works: it produces the
-proposal and stops at the point of writing.
+Without the write scopes the skill still works: it produces the proposal and
+stops at the point of writing. With `write_products` but not `write_files` it
+writes the text fields and reports the alt text as not written — measured on a
+live store on 2026-08-04, where `fileUpdate` returned ACCESS_DENIED while
+`productUpdate` succeeded.
 
 ## What StoreHand may see
 
-Setup requests five **read-only** scopes. A sixth, `write_products`, is offered
-separately and only if you want the listing writer — every other skill works
-without it, and a store connected with the five is the safer resting state.
+Setup requests five **read-only** scopes. Two write scopes, `write_products` and
+`write_files`, are offered separately and only if you want the listing writer —
+every other skill works without them, and a store connected with the five is the
+safer resting state.
 
 | Scope | Why |
 |---|---|
@@ -157,7 +161,8 @@ without it, and a store connected with the five is the safer resting state.
 | `read_discounts` | Discount codes and windows for the health check |
 | `read_online_store_navigation` | Menu links for the broken-link check |
 | `read_reports` | Not requested by StoreHand — Shopify's own CLI app adds it to every authorization. Listed here because the consent screen will show it |
-| `write_products` | **Optional, opt-in.** Only for `product-listing-writer`, and only to apply a proposal you have read and edited. Titles, descriptions, SEO fields and image alt text — not prices, not inventory, not orders |
+| `write_products` | **Optional, opt-in.** Only for `product-listing-writer`, and only to apply a proposal you have read and edited. Titles, descriptions and SEO fields — not prices, not inventory, not orders |
+| `write_files` | **Optional, opt-in.** Image alt text only. Shopify puts alt text behind `fileUpdate`, which `write_products` does not cover — without this scope the listing writer applies everything else and reports the alt text as not written |
 
 You approve these in your own browser, on Shopify's own screen. See
 [docs/connect.md](docs/connect.md) for how the connection works and why it needs
@@ -165,8 +170,15 @@ no app of your own.
 
 ## No telemetry
 
-StoreHand sends nothing anywhere. No usage pings, no prompts, no store data. The
-only network traffic is the Shopify CLI talking to your own store.
+StoreHand sends nothing anywhere. No usage pings, no prompts, no store data, and
+there is no StoreHand server for any of it to go to.
+
+The network traffic is the Shopify CLI talking to your own store, setup finishing
+its login on your own machine, the health check requesting your own storefront,
+and the listing writer fetching your own product images so it can describe what
+is in a photo rather than guess. That is the whole list, it is written down in
+[`shared/safety.md`](shared/safety.md), and a test checks it against what the
+skills actually declare.
 
 ---
 
@@ -186,8 +198,8 @@ does the talking. You can read every question it will ever ask your store.
 
 ## Roadmap
 
-Version 1 is setup plus six skills. **Setup and three of the six are shipped**;
-three are not written yet. A skill is only listed as shipped once it has run
+Version 1 is setup plus six skills. **Setup and four of the six are shipped**;
+two are not written yet. A skill is only listed as shipped once it has run
 against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 
 | # | Skill | What it does | Status |
@@ -197,7 +209,7 @@ against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 | 2 | `store-health-check` | Weekly audit, broken links, discount and metadata gaps | **Shipped** |
 | 3 | `product-listing-writer` | Titles, descriptions, SEO fields and alt text in your brand voice | **Shipped** |
 | 4 | `price-and-competitor-watch` | Follows a fixed list of competitor product pages and reports the gap against your margin rules | Planned |
-| 5 | `seo-metadata-audit` | Sweeps the whole catalogue for titles, meta descriptions and alt text that lag behind, and prepares the fixes | Planned |
+| 5 | `seo-metadata-audit` | Sweeps the whole catalogue, judges titles, meta descriptions and alt text, and orders what to fix first | **Shipped** |
 | 6 | `weekly-store-report` | Revenue, conversion and returning customers, with concrete actions | Planned |
 
 **Deliberately not in version 1:** customer-service chat and email, review
@@ -207,7 +219,7 @@ break the "no external services" promise this project runs on.
 
 ### Following along
 
-Three skills to go. Each one ships the same way: built, run against a real
+Two skills to go. Each one ships the same way: built, run against a real
 store, evidence in `docs/dogfood/`, and only then listed as shipped.
 
 - **Watch → Custom → Releases** tells you when one lands, and nothing else.

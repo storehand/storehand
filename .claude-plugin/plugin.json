@@ -1,9 +1,17 @@
 {
   "name": "storehand",
-  "description": "Open-source skills that turn Claude into your daily Shopify operator. Today: store setup, a daily briefing (orders, payment problems, cancellations, stock alerts), a weekly health check (sold-out products, broken links, discount and metadata gaps) and a listing writer that proposes product copy into a file you edit before anything is written. On the way: price watching, SEO audits and weekly reports. Runs through the official Shopify CLI. Read-only by default. Sends no telemetry.",
-  "version": "0.3.0",
-  "author": { "name": "Steffano van Hoven (DevSef)" },
+  "description": "Open-source skills that turn Claude into your daily Shopify operator. Today: store setup, a daily briefing (orders, payment problems, cancellations, stock alerts), a weekly health check (sold-out products, broken links, discount and metadata gaps), a listing writer that proposes product copy into a file you edit before anything is written, and an SEO audit that sweeps the whole catalogue and orders what to fix first. On the way: price watching and weekly reports. Runs through the official Shopify CLI. Read-only by default. Sends no telemetry.",
+  "version": "0.4.0",
+  "author": {
+    "name": "Steffano van Hoven (DevSef)"
+  },
   "license": "Apache-2.0",
   "homepage": "https://github.com/storehand/storehand",
-  "keywords": ["shopify", "ecommerce", "store-operations", "admin-api", "graphql"]
+  "keywords": [
+    "shopify",
+    "ecommerce",
+    "store-operations",
+    "admin-api",
+    "graphql"
+  ]
 }
