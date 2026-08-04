@@ -206,11 +206,45 @@ instead of quietly implying progress.
 
 **That is the half of this skill that had never been proven**, and it now is.
 
+## Run 3 — alt text written end to end, and a partial fix reported as partial
+
+The owner re-authorised with `write_files` (via the `xdg-open` shim route in
+`docs/connect.md`, since this machine has no browser). Three alt texts were then
+written, one `fileUpdate` call per image, and read back from the store:
+
+```
+foto 1: "Aansluitend basic T-shirt met ronde hals in taupe, gecombineerd met een grijze jeans"
+foto 2: "Hetzelfde T-shirt in zachtgeel, met korte mouwen en ronde hals"
+foto 3: "Zachtgeel basic T-shirt in vol beeld, op een grijze wide-leg jeans"
+foto 4: "Gimme Knitted Comfort T-Shirts - Soft, Stylish & All Fit"   ← untouched, as designed
+```
+
+Third sweep straight after:
+
+```
+MEDIUM images with a duplicate alt   426   (was 429 — 3 fixed)
+partially updated: 1 product — 3 of 16 images now unique
+```
+
+**The cap behaved exactly as designed and the report says so.** Three images
+fixed, thirteen still sharing an alt, one product flagged as partially updated
+rather than quietly dropped or quietly kept. That is the case the whole
+`partially updated` rule exists for, and it is now proven rather than argued.
+
+### One more truncated view read as a whole number
+
+This product has **16 images, not 10**. The earlier note in this file said ten,
+because `products-by-handle.graphql` fetches `media(first: 10)` while the audit's
+sweep fetches `first: 20`. Nothing was wrong with either query — the number in
+the prose was a capped view quoted as a total.
+
+Third instance in one session of the same shape: a partial result that reads as
+complete. The others were the 76-on-42 count and the missing image URL. Worth
+noting that all three were caught by comparing two sources, never by reading one
+more carefully.
+
 ## What has not been tested
 
-- **Writing alt text end to end.** Blocked on `write_files`, which this store
-  has not granted. The read, the photo, the proposed text and the refusal are
-  all proven; the successful write is not. It needs one re-authorisation.
 - **The missing-menu-scope path.** This store has
   `read_online_store_navigation`, so the branch that drops the visibility layer
   has never executed. It must be forced before release.
