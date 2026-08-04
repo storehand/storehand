@@ -91,7 +91,7 @@ memory of what it found last time.
 
 Every skill has run against a live store before being called shipped, and the
 run is written up in [`docs/dogfood/`](docs/dogfood/) — the commands, the real
-output, and what was awkward about it. The repository carries 121 tests.
+output, and what was awkward about it. The repository carries 130 tests.
 
 The weekly check is the one that finds things nobody is looking for. It fetches
 your storefront over HTTP rather than trusting the admin, so a link that exists

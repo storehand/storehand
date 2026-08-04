@@ -2,3 +2,8 @@ node_modules/
 .storehand/state.json
 .DS_Store
 *.log
+
+# Full-height demo captures: 1–1.5 MB each and up to 10,884 px tall. The README
+# uses the cropped -report/-apply versions; these stay out of the repository on
+# purpose. Recorded with the harness described in docs/dogfood/.
+assets/*-full.png
