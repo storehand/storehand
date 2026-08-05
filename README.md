@@ -269,6 +269,11 @@ run anything themselves. It only gets built if enough people ask for it.
 launch date, once it is known. Miss the minimum sign-ups and the list is
 deleted, nothing is sent, and nothing is built.
 
+What it would be — a theme builder that writes custom sections straight into
+your theme instead of renting them as apps, and manages them afterwards — is
+written up in [`docs/hosted.md`](docs/hosted.md). **None of it is built.** It is
+published early so it can be argued with before it exists.
+
 ## Contributing
 
 Bug reports and skill ideas are welcome — see
