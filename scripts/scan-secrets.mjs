@@ -42,6 +42,9 @@ const ALLOWED_HOSTS = new Set([
   'www.w3.org',
   // Badge images in the README. A static badge CDN, never a store domain.
   'img.shields.io',
+  // The Product Hunt launch badge. `api.` serves the badge image and `www.` is
+  // the link target; both ride in on the subdomain rule below.
+  'producthunt.com',
   // The two standards this project cites by name: the versioning scheme in
   // CHANGELOG.md and the code of conduct it adapts. Both are documentation
   // references. Without them, adding either file fails the scan on its own text.
