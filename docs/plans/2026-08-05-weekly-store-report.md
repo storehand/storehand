@@ -822,7 +822,7 @@ paragraph, add:
 ```markdown
 **What is untested in skill 6.** The ShopifyQL pipe is proven: every column it
 reads was executed against a live store and the evidence is in
-[`docs/dogfood/`](docs/dogfood/). What has not run is the cross-check. The store
+`docs/dogfood/`. What has not run is the cross-check. The store
 available for testing has no payment provider, so revenue and orders are both
 zero — and two zeroes always agree. **The cross-check has never fired against
 non-zero data.** It may also turn out to report a gap every week on a real
