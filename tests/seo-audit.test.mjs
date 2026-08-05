@@ -273,10 +273,10 @@ test('the README network sentence matches the promise', () => {
 test('the shipped count matches the roadmap table', () => {
   const r = read('README.md');
   const shipped = [...r.matchAll(/^\| \d+ \| `[^`]+` \|[^|]*\| \*\*Shipped\*\* \|$/gm)].length;
-  assert.equal(shipped, 5, 'setup plus four skills are shipped');
+  assert.equal(shipped, 6, 'setup plus five skills are shipped');
   assert.match(
     flat(r),
-    /four of the five are shipped/i,
+    /all five are shipped/i,
     'the prose above the table must agree with the table',
   );
 });

@@ -29,7 +29,7 @@
 ---
 
 Ask your store a question in plain language and get the answer Claude read out
-of it — new orders, payments that failed, stock running out. Four open-source
+of it — new orders, payments that failed, stock running out. Five open-source
 skills for Claude Code. **Read-only by default**, no telemetry, no account,
 nothing running on someone else's server.
 
@@ -89,6 +89,7 @@ not, [leave your email](https://storehand.github.io) — see
 | `daily-store-briefing` | Morning briefing: new orders, failed payments, cancellations, refunds, low-stock alerts | No — local files only |
 | `store-health-check` | Weekly audit: sold-out-but-active products, discount windows, broken storefront links, missing SEO metadata | No — local files only |
 | `product-listing-writer` | Product titles, descriptions, SEO fields and image alt text in your own voice — proposed in a file you edit, applied only on a separate command | Yes — only what you approved. Titles, descriptions and SEO need `write_products`; alt text needs `write_files` as well |
+| `weekly-store-report` | Week-on-week change in revenue, orders, average order value, sessions and conversion, with revenue and orders cross-checked against the order records | No — local files only |
 
 "Local files only" means `.storehand/` in your own directory — the profile, a
 timestamp so tomorrow's briefing knows where to start, and the health check's
@@ -112,7 +113,7 @@ rather than reporting a clean bill of health.
 
 ## StoreHand proposes, you approve
 
-Three of the four skills read your store and write nothing to it — not a
+Four of the five skills read your store and write nothing to it — not a
 product, not a price, not an order.
 
 `product-listing-writer` is the one that can change something, and it is built
@@ -202,8 +203,7 @@ does the talking. You can read every question it will ever ask your store.
 
 ## Roadmap
 
-Version 1 is setup plus five skills. **Setup and four of the five are shipped**;
-one is not written yet. A skill is only listed as shipped once it has run
+Version 1 is setup plus five skills. **Setup and all five are shipped.** A skill is only listed as shipped once it has run
 against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 
 | # | Skill | What it does | Status |
@@ -214,7 +214,18 @@ against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 | 3 | `product-listing-writer` | Titles, descriptions, SEO fields and alt text in your brand voice | **Shipped** |
 | 4 | `price-and-competitor-watch` | Follows a fixed list of competitor product pages and reports the gap against your margin rules | After version 1 |
 | 5 | `seo-metadata-audit` | Sweeps the whole catalogue, judges titles, meta descriptions and alt text, and orders what to fix first | **Shipped** |
-| 6 | `weekly-store-report` | Revenue, conversion and returning customers, with concrete actions | Planned |
+| 6 | `weekly-store-report` | Week-on-week change in revenue, orders, average order value, sessions and conversion — cross-checked against the order records | **Shipped** |
+
+**What is untested in skill 6.** The ShopifyQL pipe is proven: every column
+`weekly-store-report` reads was executed against a live store and the evidence
+is in `docs/dogfood/`. What has not run is the cross-check. The store available
+for testing has no payment provider, so revenue and orders are both zero — and
+two zeroes always agree. **The cross-check has never fired against non-zero
+data.** It may also turn out to report a gap every week on a real store, because
+`total_sales` is a defined Shopify metric rather than a synonym for summing
+order totals. That is why a gap is printed as *unexplained* rather than *wrong*,
+and why this paragraph exists instead of a claim that the skill is fully
+exercised.
 
 **Why 4 moved out of version 1.** It was measured before it was built, and the
 measurement killed the design. Fetching competitor product pages the way the
@@ -235,8 +246,8 @@ break the "no external services" promise this project runs on.
 
 ### Following along
 
-One skill to go. It ships the same way the others did: built, run against a real
-store, evidence in `docs/dogfood/`, and only then listed as shipped.
+Version 1 is complete. Each skill shipped the same way: built, run against a
+real store, evidence in `docs/dogfood/`, and only then listed as shipped.
 
 - **Watch → Custom → Releases** tells you when one lands, and nothing else.
   Plain *Watch* also sends you every issue and pull request, which is probably

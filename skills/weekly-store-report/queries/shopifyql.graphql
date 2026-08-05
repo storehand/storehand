@@ -1,0 +1,22 @@
+# One ShopifyQL query, executed through the Admin API. Read-only.
+# Requires the read_reports scope, which Shopify's own CLI app grants on every
+# authorization — StoreHand does not request it separately.
+#
+# $query example: "FROM sales SHOW total_sales, net_sales, orders,
+#                  average_order_value SINCE 2026-07-28 UNTIL 2026-08-03"
+#
+# The field is `rows`, typed JSON. There is no `rowData` field; asking for one
+# fails the whole query. Measured 2026-08-05.
+query WeeklyShopifyQL($query: String!) {
+  shopifyqlQuery(query: $query) {
+    parseErrors
+    tableData {
+      columns {
+        name
+        dataType
+        displayName
+      }
+      rows
+    }
+  }
+}
