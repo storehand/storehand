@@ -9,6 +9,50 @@ Before 1.0 the shape of a skill's output is not a stable interface — the
 
 ## [Unreleased]
 
+## [0.5.0] — 2026-08-05
+
+Version 1 is complete: setup plus five skills.
+
+### Added
+
+- **`weekly-store-report` (skill #6).** Read-only week-on-week change across
+  revenue, net revenue, orders, average order value, sessions and conversion.
+  Whole calendar weeks only — a Wednesday run reports the last *closed* week
+  rather than putting three days next to seven. The first skill to use
+  ShopifyQL, through the Admin API's `shopifyqlQuery` field and the same Shopify
+  CLI everything else runs on; it needs no scope beyond what a StoreHand
+  connection already has.
+- **A cross-check on the numbers that have a second source.** Revenue and orders
+  are measured again from the order records, reusing the query
+  `daily-store-briefing` already ships. When the two disagree the report prints
+  both figures and calls the gap *unexplained* — never *wrong*, and never
+  resolved by quietly preferring one. There is deliberately no tolerance, and a
+  test fails if one is added: `total_sales` is a defined Shopify metric rather
+  than a synonym for summing order totals, and nobody has yet measured what the
+  normal gap looks like.
+- **A test that keeps the two manifests in step.** `plugin.json` and
+  `marketplace.json` must carry the same version and the same description, and
+  the description may not still promise a skill that has shipped.
+
+### Fixed
+
+- **`marketplace.json` had been stale since 0.3.0.** The 0.4.0 release bumped
+  `plugin.json` and left the marketplace listing two versions behind, still
+  advertising the SEO audit as upcoming. Since Claude Code decides whether an
+  installed plugin updates on the version number alone, that did not merely
+  misinform — it withheld the release. Both manifests are now 0.5.0 and a test
+  fails if they part company again.
+
+### Known limitation
+
+- **The weekly report's cross-check has never fired against non-zero data.**
+  The store it was dogfooded on has no payment provider, so revenue and orders
+  are both zero, and two zeroes always agree. The ShopifyQL pipe is proven —
+  every column was executed against a live store and real session figures came
+  back — but the comparison that makes the skill worth having has not yet had
+  the chance to disagree. This is stated in the README and pinned by a test so
+  it cannot quietly disappear.
+
 ## [0.4.0] — 2026-08-04
 
 ### Added
