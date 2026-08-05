@@ -214,7 +214,7 @@ against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 | 3 | `product-listing-writer` | Titles, descriptions, SEO fields and alt text in your brand voice | **Shipped** |
 | 4 | `price-and-competitor-watch` | Follows a fixed list of competitor product pages and reports the gap against your margin rules | After version 1 |
 | 5 | `seo-metadata-audit` | Sweeps the whole catalogue, judges titles, meta descriptions and alt text, and orders what to fix first | **Shipped** |
-| 6 | `weekly-store-report` | Revenue, conversion and returning customers, with concrete actions | Planned |
+| 6 | `weekly-store-report` | Week-on-week change in revenue, orders, average order value, sessions and conversion — cross-checked against the order records | Planned |
 
 **Why 4 moved out of version 1.** It was measured before it was built, and the
 measurement killed the design. Fetching competitor product pages the way the
