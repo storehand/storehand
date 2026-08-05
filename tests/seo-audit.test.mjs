@@ -276,8 +276,22 @@ test('the shipped count matches the roadmap table', () => {
   assert.equal(shipped, 5, 'setup plus four skills are shipped');
   assert.match(
     flat(r),
-    /four of the six are shipped/i,
+    /four of the five are shipped/i,
     'the prose above the table must agree with the table',
+  );
+});
+
+test('a skill held back from version 1 says so in the table and gives the reason', () => {
+  const r = read('README.md');
+  assert.match(
+    r,
+    /^\| 4 \| `price-and-competitor-watch` \|[^|]*\| After version 1 \|$/m,
+    'skill 4 needs a browser StoreHand does not depend on — the table must not still call it Planned',
+  );
+  assert.match(
+    flat(r),
+    /zero times on Shopify/i,
+    'the deferral is a measurement, not an opinion — the README must carry the number',
   );
 });
 

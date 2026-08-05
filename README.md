@@ -202,8 +202,8 @@ does the talking. You can read every question it will ever ask your store.
 
 ## Roadmap
 
-Version 1 is setup plus six skills. **Setup and four of the six are shipped**;
-two are not written yet. A skill is only listed as shipped once it has run
+Version 1 is setup plus five skills. **Setup and four of the five are shipped**;
+one is not written yet. A skill is only listed as shipped once it has run
 against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 
 | # | Skill | What it does | Status |
@@ -212,9 +212,21 @@ against a live store and the evidence is in [`docs/dogfood/`](docs/dogfood/).
 | 1 | `daily-store-briefing` | Orders, payments, cancellations, stock | **Shipped** |
 | 2 | `store-health-check` | Weekly audit, broken links, discount and metadata gaps | **Shipped** |
 | 3 | `product-listing-writer` | Titles, descriptions, SEO fields and alt text in your brand voice | **Shipped** |
-| 4 | `price-and-competitor-watch` | Follows a fixed list of competitor product pages and reports the gap against your margin rules | Planned |
+| 4 | `price-and-competitor-watch` | Follows a fixed list of competitor product pages and reports the gap against your margin rules | After version 1 |
 | 5 | `seo-metadata-audit` | Sweeps the whole catalogue, judges titles, meta descriptions and alt text, and orders what to fix first | **Shipped** |
 | 6 | `weekly-store-report` | Revenue, conversion and returning customers, with concrete actions | Planned |
+
+**Why 4 moved out of version 1.** It was measured before it was built, and the
+measurement killed the design. Fetching competitor product pages the way the
+other skills fetch a storefront succeeded once in nine attempts, and **zero
+times on Shopify** — the platform the design was aimed at. Three failure modes:
+403 bot protection, 429 from Shopify's edge throttling datacenter addresses, and
+pages that load fine but carry no price because the shop renders it in the
+browser. A headless browser on a normal machine read the same pages without
+trouble — 18 prices on a client-rendered Shopify shop, 15 on a Magento one — so
+the skill is possible, but only by requiring a browser StoreHand does not
+currently depend on. That is a dependency this project should not gain quietly,
+so skill 4 gets its own design round after version 1 rather than a patch now.
 
 **Deliberately not in version 1:** customer-service chat and email, review
 replies, email marketing and social, discount campaign creation, A/B testing.
@@ -223,7 +235,7 @@ break the "no external services" promise this project runs on.
 
 ### Following along
 
-Two skills to go. Each one ships the same way: built, run against a real
+One skill to go. It ships the same way the others did: built, run against a real
 store, evidence in `docs/dogfood/`, and only then listed as shipped.
 
 - **Watch → Custom → Releases** tells you when one lands, and nothing else.
