@@ -122,6 +122,16 @@ test('layer 1 refuses to read a number out of a failed query', () => {
   );
 });
 
+test('a null value is not treated as zero', () => {
+  const s = skill();
+  assert.match(
+    s,
+    /Null is not zero/i,
+    'average_order_value returns null on a week with no orders — measured 2026-08-05',
+  );
+  assert.match(s, /never compute a percentage change from it/i);
+});
+
 test('layer 2 measures revenue and orders a second time', () => {
   const s = skill();
   assert.match(s, /orders-since\.graphql/, 'reuse the briefing query, do not write a second one');

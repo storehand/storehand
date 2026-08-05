@@ -129,6 +129,11 @@ Before reading a single row:
   and a query that failed to parse measured nothing.
 - Every column you asked for must appear in `columns`. A column that silently
   went missing is the same failure wearing a friendlier face.
+- **A present column can still hold `null`.** Measured on a live store on
+  2026-08-05: with no orders in the week, `average_order_value` came back `null`
+  while `total_sales` and `orders` came back `"0"`. Null is not zero and it is
+  not a hundred percent drop. Print the row as `—` with a word for why, and
+  never compute a percentage change from it or into it.
 
 ShopifyQL fails loudly here, which is the opposite of the Admin API search
 filters recorded in the probes of 2026-07-30. A bad ShopifyQL column is an
